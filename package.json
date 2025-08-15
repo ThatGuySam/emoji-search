@@ -9,6 +9,8 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@electric-sql/pglite": "^0.3.7",
+    "@huggingface/transformers": "^3.7.1",
     "astro": "^5.13.0"
   }
 }
