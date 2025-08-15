@@ -9,8 +9,13 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/react": "^4.3.0",
     "@electric-sql/pglite": "^0.3.7",
     "@huggingface/transformers": "^3.7.1",
-    "astro": "^5.13.0"
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "astro": "^5.13.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
   }
 }
