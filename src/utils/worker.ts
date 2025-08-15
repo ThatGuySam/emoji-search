@@ -1,10 +1,16 @@
 import type { FeatureExtractionPipeline } from '@huggingface/transformers'
-import { pipeline } from '@huggingface/transformers'
+import { env, pipeline } from '@huggingface/transformers'
+
+// keep remote, but point to your host (CORS required)
+env.allowRemoteModels = true
+env.remoteHost = 'https://models.samcarlton.com'
+env.remotePathTemplate = '{model}/'
+// env.backends.onnx.wasm.wasmPaths = 'https://cdn.yourdomain.com/wasm/'
 
 // Use the Singleton pattern to enable lazy construction of the pipeline.
 class PipelineSingleton {
   static task = 'feature-extraction' as const
-  static model = 'Supabase/gte-small' as const
+  static model = 'supabase/gte-small' as const
   static instance: FeatureExtractionPipeline | null = null
 
   static async getInstance(
