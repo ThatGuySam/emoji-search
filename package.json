@@ -3,10 +3,13 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "concurrently \"pnpm dev:astro\" \"pnpm dev:wrangler\"",
+    "dev:astro": "astro dev",
+    "dev:wrangler": "pnpm dlx wrangler dev --port 8787 --local --assets=\"\"",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "deploy": "astro build && pnpm dlx wrangler deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.3",
@@ -20,6 +23,7 @@
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
+    "concurrently": "^9.2.0",
     "wrangler": "^4.30.0"
   }
 }
