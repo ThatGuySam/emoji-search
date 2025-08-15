@@ -3,9 +3,10 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "concurrently \"pnpm dev:astro\" \"pnpm dev:wrangler\"",
-    "dev:astro": "astro dev",
-    "dev:wrangler": "pnpm dlx wrangler dev --port 8787 --local --assets=\"\"",
+    "dev": "pnpm dev:astro",
+    "dev:prototype": "concurrently \"pnpm dev:astro\" \"pnpm dev:wrangler\"",
+    "dev:astro": "astro dev --port 4321",
+    "dev:wrangler": "wrangler pages dev --proxy 4321 --port 8787",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
