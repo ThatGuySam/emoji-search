@@ -35,6 +35,10 @@ importers:
       react-dom:
         specifier: ^19.1.1
         version: 19.1.1(react@19.1.1)
+    devDependencies:
+      wrangler:
+        specifier: ^4.30.0
+        version: 4.30.0(@cloudflare/workers-types@4.20250813.0)
 
 packages:
 
