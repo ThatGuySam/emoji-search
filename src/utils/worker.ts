@@ -1,21 +1,22 @@
 import type { FeatureExtractionPipeline } from '@huggingface/transformers'
 import { env, pipeline } from '@huggingface/transformers'
+import { MODELS_HOST, MODELS_PATH_TEMPLATE, SUPA_GTE_SMALL } from '../constants'
 
 // keep remote, but point to your host (CORS required)
 env.allowRemoteModels = true
-env.remoteHost = 'https://models.samcarlton.com'
+env.remoteHost = MODELS_HOST
 // Working path for https://models.samcarlton.com
 /**
  * {filename} is not a thing in this version of transformers
  */
-env.remotePathTemplate = '{model}/resolve/{revision}/'
+env.remotePathTemplate = MODELS_PATH_TEMPLATE
 // env.backends.onnx.wasm.wasmPaths = 'https://models.samcarlton.com/wasm/'
 
 // Use the Singleton pattern to enable lazy construction of the pipeline.
 class PipelineSingleton {
   static task = 'feature-extraction' as const
   // Path to the model on the remote host
-  static model = 'supabase/gte-small' as const
+  static model = `${SUPA_GTE_SMALL}` as const
   static instance: FeatureExtractionPipeline | null = null
 
   static async getInstance(
