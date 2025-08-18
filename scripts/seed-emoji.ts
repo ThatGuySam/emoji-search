@@ -14,6 +14,7 @@ import fs from 'node:fs/promises'
 import { promisify } from 'node:util'
 import {
   brotliCompress,
+  gzip as gzipCompress,
   constants as z,
 } from 'node:zlib'
 import { basename } from 'node:path'
@@ -325,6 +326,8 @@ async function main() {
     `${EMBED_BIN}.zst`
   const EMBED_BIN_BR =
     `${EMBED_BIN}.br`
+  const EMBED_BIN_GZ =
+    `${EMBED_BIN}.gz`
 
 
   // Demo query: encode text exactly like
@@ -359,6 +362,16 @@ async function main() {
     return br
   }
 
+  const gzipAsync = promisify(gzipCompress)
+  const writeGzip = async () => {
+    const gz = await fs.writeFile(
+      EMBED_BIN_GZ,
+      await gzipAsync(embedBinBuf)
+    )
+    console.log('🚣 Gzip compressed BIN to', gz)
+    return gz
+  }
+
   const writeZstd = async () => {
     // if (fast) return
     const buf = await zstd(
@@ -383,6 +396,8 @@ async function main() {
     writeCompressed(),
     // Compress DB (Zstd)
     writeZstd(),
+    // Compress DB (Gzip)
+    writeGzip(),
   ])
 
   // Verify .zst round-trip by reading
@@ -416,6 +431,7 @@ async function main() {
     META_JSON,
     EMBED_BIN,
     EMBED_BIN_ZST,
+    EMBED_BIN_GZ,
   ]
 
   if (!fast) {
