@@ -1,13 +1,11 @@
 /**
- * Build an emoji FTS DB and ship artifacts.
+ * Build an embeddings DB and ship.
  *
  * Run:
  *   $ bun scripts/seed-emoji.ts
  *   # or: npx tsx scripts/seed-emoji.ts
  *
  * Outputs:
- *   dist/emojis.compact.json
- *   dist/emojis.compact.json.br
  *   dist/emoji.tar
  *   dist/emoji.tar.br
  */
@@ -19,23 +17,31 @@ import {
 } from 'node:zlib'
 import { basename } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
-// https://github.com/muan/emojilib?tab=readme-ov-file
+import { vector } from '@electric-sql/pglite/vector'
+import { env, pipeline } from
+  '@huggingface/transformers'
+import { MODELS_HOST,
+  MODELS_PATH_TEMPLATE,
+  SUPA_GTE_SMALL } from
+  '../src/constants'
+// https://github.com/muan/emojilib
 import Emojilib from 'emojilib'
 
 /**
  * Row stored in JSON and DB.
  */
 type Row = {
+  /** identifier */
   id: string
+  /** emoji glyph */
   emoji: string
+  /** short name */
   name: string
+  /** keywords */
   keywords: string[]
-  category?: string | null
 }
 
 const OUT_DIR = './dist'
-const OUT_JSON = `${OUT_DIR}/emojis.compact.json`
-const OUT_JSON_BR = `${OUT_JSON}.br`
 const OUT_DB_TAR = `${OUT_DIR}/emoji.tar`
 const OUT_DB_TAR_BR = `${OUT_DB_TAR}.br`
 
@@ -88,7 +94,6 @@ function buildEmojiRows(): Row[] {
       emoji: ch,
       name,
       keywords: keys,
-      category: null,
     })
   }
   if (rows.length === 0) {
@@ -98,80 +103,151 @@ function buildEmojiRows(): Row[] {
 }
 
 /**
- * Create table and FTS index.
+ * Create embeddings schema.
  */
 async function initSchema(db: PGlite) {
   await db.exec(`
-    create table if not exists emoji (
-      id text primary key,
-      emoji text not null,
-      name text not null,
-      keywords text[] not null,
-      category text,
-      tsv tsvector
+    create extension if not exists vector;
+    create table if not exists embeddings (
+      id bigint primary key
+        generated always as identity,
+      content text not null,
+      embedding vector(384)
     );
-    create index if not exists emoji_tsv_gin
-    on emoji using gin (tsv);
+    create index if not exists
+      embeddings_hnsw_ip
+    on embeddings
+      using hnsw (embedding vector_ip_ops);
   `)
 }
 
 /**
- * Bulk insert rows in batches.
+ * Create the encoder pipeline.
  */
-async function insertAll(
+async function getEncoder() {
+  // mirror browser worker env
+  env.allowRemoteModels = true
+  env.remoteHost = MODELS_HOST
+  env.remotePathTemplate =
+    MODELS_PATH_TEMPLATE
+  const enc = await pipeline(
+    'feature-extraction',
+    SUPA_GTE_SMALL,
+    { dtype: 'fp32', device: 'cpu' }
+  )
+  return enc
+}
+
+/**
+ * Ensure vector is 384 numbers.
+ */
+function assertEmbedding(vec: number[]) {
+  if (!Array.isArray(vec) ||
+      vec.length !== 384 ||
+      !vec.every(n => Number.isFinite(n))) {
+    throw new Error('len 384 number[]')
+  }
+}
+
+/**
+ * Encode content to embedding.
+ */
+async function encodeContent(
+  content: string,
+  enc: Awaited<ReturnType<
+    typeof getEncoder
+  >>,
+) {
+  const out = await enc(content, {
+    pooling: 'mean',
+    normalize: true,
+  })
+  // transformers.js returns a typed array at
+  // runtime. Cast narrowly and normalize to
+  // a plain number[].
+  const raw = (out as unknown as {
+    data: Float32Array | number[]
+  }).data
+  const arr = Array.isArray(raw)
+    ? raw.slice()
+    : Array.from(raw)
+  assertEmbedding(arr)
+  return arr
+}
+
+/**
+ * Search by embedding vector (cosine/IP),
+ * mirroring src/utils/db.ts logic.
+ */
+async function searchEmbeddings(
+  db: PGlite,
+  embedding: number[],
+  matchThreshold = 0.8,
+  limit = 5,
+) {
+  const res = await db.query<{
+    content: string
+  }>(
+    `
+    select content from embeddings
+    where embedding <#> $1 < $2
+    order by embedding <#> $1
+    limit $3;
+    `,
+    [
+      JSON.stringify(embedding),
+      -Number(matchThreshold),
+      Number(limit),
+    ]
+  )
+  return res.rows
+}
+
+/**
+ * Insert embeddings in batches.
+ */
+async function insertEmbeddings(
   db: PGlite,
   rows: Row[],
 ) {
-  const batch = 500
-  await db.transaction(async (tx) => {
-    for (let i = 0; i < rows.length; i +=
-         batch) {
-      const slice = rows.slice(i, i + batch)
-      const vals = slice.map((_, j) =>
-        `($${j*5+1},$${j*5+2},$${j*5+3},` +
-        `$${j*5+4}::text[],$${j*5+5})`
+  const enc = await getEncoder()
+  const batch = 64
+  for (let i = 0; i < rows.length; i +=
+       batch) {
+    const slice = rows.slice(i, i + batch)
+    const embeds = await Promise.all(
+      slice.map(r => {
+        const keys = r.keywords
+          .slice(0, 10)
+          .join(' ')
+        const content = `${r.emoji} ${keys}`
+        return encodeContent(
+          content, enc
+        ).then(e => ({
+          content,
+          embedding: e,
+        }))
+      })
+    )
+    await db.transaction(async (tx) => {
+      const vals = embeds.map((_, j) =>
+        `($${j*2+1},$${j*2+2})`
       ).join(',')
       const params: unknown[] = []
-      for (const r of slice) {
+      for (const e of embeds) {
         params.push(
-          r.id, r.emoji, r.name, r.keywords,
-          r.category ?? null
+          e.content,
+          JSON.stringify(e.embedding)
         )
       }
-      const valuesSql = slice.map((_, j) => {
-        const b = j * 5
-        return `($${b+1},$${b+2},$${b+3},` +
-          `$${b+4}::text[],$${b+5},` +
-          `setweight(to_tsvector('simple',` +
-          `coalesce($${b+3},'')),'A')||` +
-          `setweight(to_tsvector('simple',` +
-          `array_to_string($${b+4},' ')),'B')||` +
-          `setweight(to_tsvector('simple',` +
-          `coalesce($${b+5},'')),'C'))`
-      }).join(',')
-
       await tx.query(
-        `insert into emoji
-         (id,emoji,name,keywords,category,tsv)
-         values ${valuesSql}
-         on conflict (id) do update set
-           emoji=excluded.emoji,
-           name=excluded.name,
-           keywords=excluded.keywords,
-           category=excluded.category,
-           tsv =
-             setweight(to_tsvector('simple',
-               coalesce(excluded.name,'')),'A') ||
-             setweight(to_tsvector('simple',
-               array_to_string(excluded.keywords,' ')
-             ),'B') ||
-             setweight(to_tsvector('simple',
-               coalesce(excluded.category,'')),'C')
-        `,
+        `insert into embeddings
+         (content, embedding)
+         values ${vals}`,
         params
       )
-    }
-  })
+    })
+  }
 }
 
 /**
@@ -182,29 +258,12 @@ async function main() {
 
   const rows = buildEmojiRows()
 
-  // Compact JSON (short keys)
-  const compact = rows.map(r => ({
-    id: r.id,
-    e: r.emoji,
-    n: r.name,
-    k: r.keywords,
-    c: r.category ?? null,
-  }))
-
-  await fs.writeFile(
-    OUT_JSON,
-    JSON.stringify(compact)
-  )
-  await fs.writeFile(
-    OUT_JSON_BR,
-    brotli(Buffer.from(
-      JSON.stringify(compact)))
-  )
-
-  const db = new PGlite()
+  const db = new PGlite({
+    extensions: { vector },
+  })
   await db.waitReady
   await initSchema(db)
-  await insertAll(db, rows)
+  await insertEmbeddings(db, rows)
 
   const tarBlob = await db.dumpDataDir('none')
   const tarBuf = Buffer.from(
@@ -217,10 +276,6 @@ async function main() {
   )
 
   const report = [
-    [basename(OUT_JSON),
-      await fileSize(OUT_JSON)],
-    [basename(OUT_JSON_BR),
-      await fileSize(OUT_JSON_BR)],
     [basename(OUT_DB_TAR),
       await fileSize(OUT_DB_TAR)],
     [basename(OUT_DB_TAR_BR),
@@ -228,6 +283,22 @@ async function main() {
   ].map(([f, s]) => ({ file: f, size: s }))
 
   console.table(report)
+
+  // Demo query: encode text exactly like
+  // the browser worker and run a vector
+  // search using inner product.
+  const enc = await getEncoder()
+  const queryText = 'shout'
+  const qVec = await encodeContent(
+    queryText, enc
+  )
+  const top = await searchEmbeddings(
+    db, qVec, 0.8, 5
+  )
+  console.log(
+    'Top matches:',
+    top.map(r => r.content)
+  )
 
   await db.close()
 }
