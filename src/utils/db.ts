@@ -16,7 +16,10 @@ export interface EmbeddingEntry {
 
 let dbInstance: PGlite | null = null
 // Implement a singleton pattern to make sure we only create one database instance.
-export async function getDB() {
+export async function getDB( options: {
+  loadDataDir?: Blob
+} = {}) {
+  const { loadDataDir } = options
   if (dbInstance) {
     return dbInstance
   }
@@ -24,6 +27,7 @@ export async function getDB() {
   try {
     const metaDb = new PGlite({
         dataDir: hasWindow ? DEFAULT_IDB_URL : undefined,
+        loadDataDir,
         extensions: {
           vector,
         },
@@ -94,15 +98,9 @@ export async function loadPrebuiltDb(
 
   // Restore into our IDB-backed database
   // and return the ready connection.
-  const db = new PGlite(
-    DATA_DIR,
-    {
-      extensions: { vector },
-      loadDataDir: tarBlob,
-    }
-  )
-  await db.waitReady
-  dbInstance = db
+  const db = getDB({
+    loadDataDir: tarBlob
+  })
   return db
 }
 
