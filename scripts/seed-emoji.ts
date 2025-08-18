@@ -1,158 +1,238 @@
 /**
- * Encode emojis into embeddings and insert
- * into a local PGlite database.
+ * Build an emoji FTS DB and ship artifacts.
  *
- * Run (pick one):
- * - bun run scripts/encode-emoji.ts
- * - npx tsx scripts/encode-emoji.ts
- * - node --loader tsx scripts/encode-emoji.ts
+ * Run:
+ *   $ bun scripts/seed-emoji.ts
+ *   # or: npx tsx scripts/seed-emoji.ts
  *
- * Notes:
- * - Uses the same model as the app:
- *   supabase/gte-small. Vectors are mean-
- *   pooled and L2-normalized (384 dims).
- * - Writes a file db at ./emoji.db
+ * Outputs:
+ *   dist/emojis.compact.json
+ *   dist/emojis.compact.json.br
+ *   dist/emoji.tar
+ *   dist/emoji.tar.br
  */
 
-import { PGlite } from '@electric-sql/pglite'
-import { vector } from '@electric-sql/pglite/vector'
-import { env, pipeline } from '@huggingface/transformers'
-
-import Emojilib from 'emojilib'
+import { promises as fs } from 'node:fs'
 import {
-  MODELS_HOST,
-  MODELS_PATH_TEMPLATE,
-  SUPA_GTE_SMALL,
-} from '../src/constants'
+  brotliCompressSync,
+  constants as z,
+} from 'node:zlib'
+import { basename } from 'node:path'
+import { PGlite } from '@electric-sql/pglite'
+// https://github.com/muan/emojilib?tab=readme-ov-file
+import Emojilib from 'emojilib'
 
-/** Build emoji → keywords index from emojilib. */
-function buildEmojiIndex() {
-  const emojiToKeys = new Map<string, Set<string>>()
-  for (const [keyword, emojiList] of
-       Object.entries(Emojilib)) {
-    for (const emojiChar of emojiList) {
-      if (!emojiToKeys.has(emojiChar)) {
-        emojiToKeys.set(emojiChar, new Set())
-      }
-      emojiToKeys.get(emojiChar)!.add(keyword)
-    }
-  }
-  return new Map(
-    Array.from(emojiToKeys.entries())
-         .map(([e, set]) => [e, Array.from(set)])
+/**
+ * Row stored in JSON and DB.
+ */
+type Row = {
+  id: string
+  emoji: string
+  name: string
+  keywords: string[]
+  category?: string | null
+}
+
+const OUT_DIR = './dist'
+const OUT_JSON = `${OUT_DIR}/emojis.compact.json`
+const OUT_JSON_BR = `${OUT_JSON}.br`
+const OUT_DB_TAR = `${OUT_DIR}/emoji.tar`
+const OUT_DB_TAR_BR = `${OUT_DB_TAR}.br`
+
+/**
+ * Brotli at max quality for static assets.
+ */
+function brotli(
+  data: Buffer | Uint8Array,
+) {
+  return brotliCompressSync(data, {
+    params: {
+      [z.BROTLI_PARAM_QUALITY]: 11,
+      [z.BROTLI_PARAM_SIZE_HINT]:
+        data.byteLength,
+    },
+  })
+}
+
+/**
+ * Format a file size in MB.
+ */
+async function fileSize(path: string) {
+  const s = await fs.stat(path)
+  return (
+    (s.size / (1024 * 1024)).toFixed(2) +
+    ' MB'
   )
 }
 
-/** Ensure a 384-length float vector. */
-function assertEmbedding(vec: number[]) {
-  if (!Array.isArray(vec) || vec.length !== 384) {
-    throw new Error('embedding must be len 384')
+/**
+ * Build emoji -> keywords map from
+ * emojilib (keyword -> emoji list).
+ */
+function buildEmojiRows(): Row[] {
+  const map = new Map<string, Set<string>>()
+  for (const [kw, list] of
+       Object.entries(Emojilib)) {
+    for (const ch of list) {
+      if (!map.has(ch)) map.set(ch, new Set())
+      map.get(ch)!.add(kw)
+    }
   }
-  if (!vec.every(n => Number.isFinite(n))) {
-    throw new Error('embedding contains non-finite')
+  const rows: Row[] = []
+  for (const [ch, set] of map) {
+    const keys = Array.from(set).sort()
+    const name = keys[0] ?? ch
+    const id = ch
+    rows.push({
+      id,
+      emoji: ch,
+      name,
+      keywords: keys,
+      category: null,
+    })
   }
+  if (rows.length === 0) {
+    throw new Error('no emojis found')
+  }
+  return rows
 }
 
-/** Create the embeddings table and index. */
+/**
+ * Create table and FTS index.
+ */
 async function initSchema(db: PGlite) {
   await db.exec(`
-    create extension if not exists vector;
-    create table if not exists embeddings (
-      id bigint primary key
-        generated always as identity,
-      content text not null,
-      embedding vector(384)
+    create table if not exists emoji (
+      id text primary key,
+      emoji text not null,
+      name text not null,
+      keywords text[] not null,
+      category text,
+      tsv tsvector
     );
-    create index if not exists
-      embeddings_hnsw_ip
-    on embeddings
-      using hnsw (embedding vector_ip_ops);
+    create index if not exists emoji_tsv_gin
+    on emoji using gin (tsv);
   `)
 }
 
-/** Create the feature-extraction pipeline. */
-async function getEncoder() {
-  env.allowRemoteModels = true
-  env.remoteHost = MODELS_HOST
-  env.remotePathTemplate = MODELS_PATH_TEMPLATE
-
-  const pipe = await pipeline(
-    'feature-extraction',
-    SUPA_GTE_SMALL,
-    { dtype: 'fp32', device: 'cpu' }
-  )
-  return pipe
-}
-
-/** Encode text to a normalized 384-dim vector. */
-async function encodeText(
-  text: string,
-  encoder: Awaited<ReturnType<typeof getEncoder>>,
-) {
-  const out = await encoder(text, {
-    pooling: 'mean',
-    normalize: true,
-  })
-  // array (.data) at runtime; we cast here
-  const arr = Array.from(out.data as Float32Array)
-  assertEmbedding(arr)
-  return arr
-}
-
-/** Insert one row. */
-async function insertRow(
+/**
+ * Bulk insert rows in batches.
+ */
+async function insertAll(
   db: PGlite,
-  content: string,
-  embedding: number[],
+  rows: Row[],
 ) {
-  await db.query(
-    `
-    insert into embeddings (content, embedding)
-    values ($1, $2);
-    `,
-    [content, JSON.stringify(embedding)],
-  )
+  const batch = 500
+  await db.transaction(async (tx) => {
+    for (let i = 0; i < rows.length; i +=
+         batch) {
+      const slice = rows.slice(i, i + batch)
+      const vals = slice.map((_, j) =>
+        `($${j*5+1},$${j*5+2},$${j*5+3},` +
+        `$${j*5+4}::text[],$${j*5+5})`
+      ).join(',')
+      const params: unknown[] = []
+      for (const r of slice) {
+        params.push(
+          r.id, r.emoji, r.name, r.keywords,
+          r.category ?? null
+        )
+      }
+      const valuesSql = slice.map((_, j) => {
+        const b = j * 5
+        return `($${b+1},$${b+2},$${b+3},` +
+          `$${b+4}::text[],$${b+5},` +
+          `setweight(to_tsvector('simple',` +
+          `coalesce($${b+3},'')),'A')||` +
+          `setweight(to_tsvector('simple',` +
+          `array_to_string($${b+4},' ')),'B')||` +
+          `setweight(to_tsvector('simple',` +
+          `coalesce($${b+5},'')),'C'))`
+      }).join(',')
+
+      await tx.query(
+        `insert into emoji
+         (id,emoji,name,keywords,category,tsv)
+         values ${valuesSql}
+         on conflict (id) do update set
+           emoji=excluded.emoji,
+           name=excluded.name,
+           keywords=excluded.keywords,
+           category=excluded.category,
+           tsv =
+             setweight(to_tsvector('simple',
+               coalesce(excluded.name,'')),'A') ||
+             setweight(to_tsvector('simple',
+               array_to_string(excluded.keywords,' ')
+             ),'B') ||
+             setweight(to_tsvector('simple',
+               coalesce(excluded.category,'')),'C')
+        `,
+        params
+      )
+    }
+  })
 }
 
+/**
+ * Main build: JSON, DB, tar, Brotli.
+ */
 async function main() {
-  // 1) DB (file-backed so it works in Node)
-  const db = new PGlite('file:emoji.db', {
-    extensions: { vector },
-  })
+  await fs.mkdir(OUT_DIR, { recursive: true })
+
+  const rows = buildEmojiRows()
+
+  // Compact JSON (short keys)
+  const compact = rows.map(r => ({
+    id: r.id,
+    e: r.emoji,
+    n: r.name,
+    k: r.keywords,
+    c: r.category ?? null,
+  }))
+
+  await fs.writeFile(
+    OUT_JSON,
+    JSON.stringify(compact)
+  )
+  await fs.writeFile(
+    OUT_JSON_BR,
+    brotli(Buffer.from(
+      JSON.stringify(compact)))
+  )
+
+  const db = new PGlite()
   await db.waitReady
   await initSchema(db)
+  await insertAll(db, rows)
 
-  // 2) Model
-  const encoder = await getEncoder()
+  const tarBlob = await db.dumpDataDir('none')
+  const tarBuf = Buffer.from(
+    await tarBlob.arrayBuffer()
+  )
+  await fs.writeFile(OUT_DB_TAR, tarBuf)
+  await fs.writeFile(
+    OUT_DB_TAR_BR,
+    brotli(tarBuf)
+  )
 
-  // 3) Build emoji → keywords
-  const index = buildEmojiIndex()
+  const report = [
+    [basename(OUT_JSON),
+      await fileSize(OUT_JSON)],
+    [basename(OUT_JSON_BR),
+      await fileSize(OUT_JSON_BR)],
+    [basename(OUT_DB_TAR),
+      await fileSize(OUT_DB_TAR)],
+    [basename(OUT_DB_TAR_BR),
+      await fileSize(OUT_DB_TAR_BR)],
+  ].map(([f, s]) => ({ file: f, size: s }))
 
-  // Optional limit to speed first run
-  const limit =
-    Number(process.env.LIMIT ?? '150')
+  console.table(report)
 
-  let count = 0
-  for (const [emojiChar, keys] of index) {
-    if (count >= limit) break
-    const keywords = keys.slice(0, 10)
-    const content =
-      `${emojiChar} ${keywords.join(' ')}`
-
-    const vec = await encodeText(
-      content, encoder
-    )
-    await insertRow(db, content, vec)
-    count += 1
-    if (count % 25 === 0) {
-      console.log(`inserted ${count}`)
-    }
-  }
-
-  console.log(`done. inserted ${count}`)
+  await db.close()
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exitCode = 1
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
 })
