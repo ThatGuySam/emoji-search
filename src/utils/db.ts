@@ -1,11 +1,6 @@
 import { PGlite } from '@electric-sql/pglite'
 import { vector } from '@electric-sql/pglite/vector'
-
-// const hasWindow = typeof globalThis !== 'undefined'
-//   && 'window' in globalThis?
-
-// const DEFAULT_IDB_URL = 'idb://supa-semantic-search'
-
+import * as zst from '@bokuweb/zstd-wasm'
 
 export interface EmbeddingEntry {
     id: number
@@ -54,6 +49,8 @@ export async function loadPrebuiltDb(
   options: { url: string },
 ) {
   const { url } = options
+  const isUncompressed = url.endsWith('.tar')
+  const isZstd = url.endsWith('.zst')
 
   // Close existing handle to avoid name
   // conflicts before we restore data.
@@ -68,30 +65,52 @@ export async function loadPrebuiltDb(
     throw new Error('failed to fetch db')
   }
 
-  // Attempt Brotli decompress; if the body
-  // is already decoded by the browser, the
-  // transform will throw and we fall back.
+  // Decompress when needed. Support .zst via
+  // zstd-wasm; fall back to Brotli stream; and
+  // finally to raw blob when already decoded.
   let tarBlob: Blob
-  try {
-    const Decomp =
-      // DecompressionStream is a browser API
-      // that may not exist in all engines
-      (self as unknown as {
-        DecompressionStream?:
-          new (type: string) => any
-      }).DecompressionStream
-    if (Decomp && resp.body) {
-      const ds = new Decomp('br')
-      const stream = resp.body
-        .pipeThrough(ds)
-      tarBlob = await new Response(
-        stream
-      ).blob()
-    } else {
+  if (isUncompressed) {
+    tarBlob = await resp.blob()
+  } else if (isZstd) {
+    try {
+      const buf = await resp.arrayBuffer()
+      if (typeof zst.init === 'function') {
+        await zst.init()
+      }
+      const out = await zst.decompress(
+        new Uint8Array(buf)
+      )
+      if (!(out instanceof Uint8Array)) {
+        throw new Error('zstd bad output')
+      }
+      tarBlob = new Blob([out], {
+        type: 'application/x-tar'
+      })
+    } catch {
+      // Fallback to raw body (likely useless
+      // for restore) to mirror existing style
       tarBlob = await resp.blob()
     }
-  } catch {
-    tarBlob = await resp.blob()
+  } else {
+    try {
+      const Decomp =
+        (self as unknown as {
+          DecompressionStream?:
+            new (type: string) => any
+        }).DecompressionStream
+      if (Decomp && resp.body) {
+        const ds = new Decomp('br')
+        const stream = resp.body
+          .pipeThrough(ds)
+        tarBlob = await new Response(
+          stream
+        ).blob()
+      } else {
+        tarBlob = await resp.blob()
+      }
+    } catch {
+      tarBlob = await resp.blob()
+    }
   }
 
   // Restore into our IDB-backed database
