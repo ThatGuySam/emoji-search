@@ -1,9 +1,12 @@
 {
     "cSpell.words": [
+        "bokuweb",
+        "Decomp",
         "dtype",
         "emojilib",
         "hnsw",
         "huggingface",
+        "moji",
         "pglite"
     ]
 }
