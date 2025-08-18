@@ -23,7 +23,7 @@ import { env, pipeline } from
   '@huggingface/transformers'
 import zst from '@bokuweb/zstd-wasm';
 
-import { DB_TAR, DB_TAR_BR, MODELS_HOST,
+import { DB_TAR, MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   OUT_DIR,
   SUPA_GTE_SMALL,
@@ -32,7 +32,7 @@ import { DB_TAR, DB_TAR_BR, MODELS_HOST,
   '../src/constants'
 import { getDB } from '../src/utils/db'
 import { packEmbeddingsBinary, type EmbeddingRow } from '../src/utils/embeddings'
-import { buildEmojiRows, emojiIndex } from '../src/utils/emoji'
+import { emojiIndex } from '../src/utils/emoji'
 
 const [
   // Whether to do a faster test run with less data
@@ -272,7 +272,7 @@ async function main() {
   await fs.mkdir(OUT_DIR, { recursive: true })
 
   console.log('🚣 Building emoji rows...')
-  const rows = buildEmojiRows().slice(0, fast ? FAST_LIMIT : undefined)
+  const rows = emojiIndex.slice(0, fast ? FAST_LIMIT : undefined)
 
   console.log('🚣 Building emoji DB...')
   const mojiDb = await getDB()
