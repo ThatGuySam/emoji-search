@@ -231,10 +231,7 @@ async function insertEmbeddings(
     const slice = rows.slice(i, i + batch)
     const embeds = await Promise.all(
       slice.map(r => {
-        // const keys = r.keywords
-        //   .slice(0, 10)
-        //   .join(' ')
-        const content = `${r.emoji}`
+        const content = `${r.emoji} ${r.id}`
         return encodeContent(
           content, enc
         ).then(e => ({
