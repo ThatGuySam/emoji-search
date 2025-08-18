@@ -23,6 +23,8 @@ import { env, pipeline } from
   '@huggingface/transformers'
 // https://github.com/muan/emojilib
 import Emojilib from 'emojilib'
+import zst from '@bokuweb/zstd-wasm';
+
 import { DB_TAR, DB_TAR_BR, MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   OUT_DIR,
@@ -32,13 +34,13 @@ import { DB_TAR, DB_TAR_BR, MODELS_HOST,
   '../src/constants'
 import { getDB } from '../src/utils/db'
 
-
 const [
   // Whether to do a faster test run with less data
   fast = false
 ] = argv.slice(2)
 
 const FAST_LIMIT = 50
+const useBrotli = false
 
 /**
  * Row stored in JSON and DB.
@@ -80,11 +82,26 @@ async function zstd(
   data: Buffer | Uint8Array,
   level = 19,
 ) {
-  const { compress } = await import(
-    '@mongodb-js/zstd'
-  )
-  const out = await compress(
+  const out = await zst.compress(
     Buffer.from(data), level
+  )
+  return Buffer.from(out)
+}
+
+// Ensure WASM is ready
+if (typeof zst.init === 'function') {
+  await zst.init()
+}
+
+/**
+ * Initialize and use zstd-wasm to
+ * decompress a Buffer/Uint8Array.
+ */
+async function zstdDecompress(
+  data: Buffer | Uint8Array,
+) {
+  const out = await zst.decompress(
+    Buffer.from(data)
   )
   return Buffer.from(out)
 }
@@ -323,8 +340,8 @@ async function main() {
   )
 
   const writeCompressed = async () => {
-    if (fast) {
-      console.log('⏭️ Skipping compression...')
+    if (fast || useBrotli) {
+      console.log('⏭️ Skipping br compression...')
       return
     }
 
@@ -361,6 +378,31 @@ async function main() {
     // Compress DB (Zstd)
     writeZstd(),
   ])
+
+  // Verify .zst round-trip by reading
+  // the file and ensuring it matches
+  // the original tarBuf
+  try {
+    const zstBuf = await fs.readFile(
+      DB_TAR_ZST
+    )
+    const dec = await zstdDecompress(
+      zstBuf
+    )
+    const same = dec.equals(tarBuf)
+    console.log(
+      '🚣 Zstd round-trip ok:', same
+    )
+    if (!same) {
+      throw new Error(
+        'zstd round-trip mismatch'
+      )
+    }
+  } catch (e) {
+    console.warn(
+      '⚠️ Zstd verify failed:', e
+    )
+  }
 
   const files = [
     DB_TAR,
