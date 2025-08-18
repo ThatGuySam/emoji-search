@@ -12,7 +12,11 @@ export default defineConfig({
   vite: {
     optimizeDeps: {
       exclude: ['@electric-sql/pglite']
-    }
+    },
+    assetsInclude: [
+      '**/*.tar',
+      '**/*.tar.br',
+    ],
   },
 
   // adapter: cloudflare()
