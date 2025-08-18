@@ -17,15 +17,15 @@ import {
 } from 'node:zlib'
 import { basename } from 'node:path'
 import { PGlite } from '@electric-sql/pglite'
-import { vector } from '@electric-sql/pglite/vector'
 import { env, pipeline } from
   '@huggingface/transformers'
+// https://github.com/muan/emojilib
+import Emojilib from 'emojilib'
 import { MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   SUPA_GTE_SMALL } from
   '../src/constants'
-// https://github.com/muan/emojilib
-import Emojilib from 'emojilib'
+import { getDB } from '../src/utils/db'
 
 /**
  * Row stored in JSON and DB.
@@ -256,19 +256,24 @@ async function insertEmbeddings(
 async function main() {
   await fs.mkdir(OUT_DIR, { recursive: true })
 
+  console.log('🚣 Building emoji rows...')
   const rows = buildEmojiRows()
 
-  const db = new PGlite({
-    extensions: { vector },
-  })
+  console.log('⛺️ Setting up DB...')
+  const db = await getDB()
   await db.waitReady
   await initSchema(db)
+
+  console.log('🛌 Inserting emoji embeddings...')
   await insertEmbeddings(db, rows)
 
+  console.log('🧠 Dumping DB to memory...')
   const tarBlob = await db.dumpDataDir('none')
   const tarBuf = Buffer.from(
     await tarBlob.arrayBuffer()
   )
+
+  console.log('💾 Writing DB to disk...')
   await fs.writeFile(OUT_DB_TAR, tarBuf)
   await fs.writeFile(
     OUT_DB_TAR_BR,
