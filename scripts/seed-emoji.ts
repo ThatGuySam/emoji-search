@@ -10,22 +10,32 @@
  *   dist/emoji.tar.br
  */
 
-import { promises as fs } from 'node:fs'
+import fs from 'node:fs/promises'
+import { promisify } from 'node:util'
 import {
-  brotliCompressSync,
+  brotliCompress,
   constants as z,
 } from 'node:zlib'
 import { basename } from 'node:path'
+import { argv } from 'node:process'
 import { PGlite } from '@electric-sql/pglite'
+import { vector } from '@electric-sql/pglite/vector'
 import { env, pipeline } from
   '@huggingface/transformers'
-// https://github.com/muan/emojilib
-import Emojilib from 'emojilib'
 import { MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   SUPA_GTE_SMALL } from
   '../src/constants'
-import { getDB } from '../src/utils/db'
+// https://github.com/muan/emojilib
+import Emojilib from 'emojilib'
+
+
+const [
+  // Whether to do a faster test run with less data
+  fast = false
+] = argv.slice(2)
+
+const FAST_LIMIT = 50
 
 /**
  * Row stored in JSON and DB.
@@ -36,9 +46,9 @@ type Row = {
   /** emoji glyph */
   emoji: string
   /** short name */
-  name: string
+  // name: string
   /** keywords */
-  keywords: string[]
+  // keywords: string[]
 }
 
 const OUT_DIR = './dist'
@@ -48,10 +58,13 @@ const OUT_DB_TAR_BR = `${OUT_DB_TAR}.br`
 /**
  * Brotli at max quality for static assets.
  */
-function brotli(
+const brotliCompressAsync =
+  promisify(brotliCompress)
+
+async function brotli(
   data: Buffer | Uint8Array,
 ) {
-  return brotliCompressSync(data, {
+  return brotliCompressAsync(data, {
     params: {
       [z.BROTLI_PARAM_QUALITY]: 11,
       [z.BROTLI_PARAM_SIZE_HINT]:
@@ -77,8 +90,12 @@ async function fileSize(path: string) {
  */
 function buildEmojiRows(): Row[] {
   const map = new Map<string, Set<string>>()
-  for (const [kw, list] of
-       Object.entries(Emojilib)) {
+  const rowLimit = fast ? FAST_LIMIT : undefined
+
+  const emojis = Object.entries(Emojilib)
+    .slice(0, rowLimit)
+
+  for (const [kw, list] of emojis) {
     for (const ch of list) {
       if (!map.has(ch)) map.set(ch, new Set())
       map.get(ch)!.add(kw)
@@ -91,9 +108,9 @@ function buildEmojiRows(): Row[] {
     const id = ch
     rows.push({
       id,
-      emoji: ch,
-      name,
-      keywords: keys,
+      emoji: keys[0],
+      // name,
+      // keywords: keys,
     })
   }
   if (rows.length === 0) {
@@ -217,10 +234,10 @@ async function insertEmbeddings(
     const slice = rows.slice(i, i + batch)
     const embeds = await Promise.all(
       slice.map(r => {
-        const keys = r.keywords
-          .slice(0, 10)
-          .join(' ')
-        const content = `${r.emoji} ${keys}`
+        // const keys = r.keywords
+        //   .slice(0, 10)
+        //   .join(' ')
+        const content = `${r.emoji}`
         return encodeContent(
           content, enc
         ).then(e => ({
@@ -259,35 +276,25 @@ async function main() {
   console.log('🚣 Building emoji rows...')
   const rows = buildEmojiRows()
 
-  console.log('⛺️ Setting up DB...')
-  const db = await getDB()
+  console.log('🚣 Building emoji DB...')
+  const db = new PGlite({
+    extensions: { vector },
+  })
   await db.waitReady
+
+  console.log('🚣 Initializing schema...')
   await initSchema(db)
 
-  console.log('🛌 Inserting emoji embeddings...')
+  console.log('🚣 Inserting embeddings...')
   await insertEmbeddings(db, rows)
 
-  console.log('🧠 Dumping DB to memory...')
+  console.log('🚣 Dumping DB to memory...')
   const tarBlob = await db.dumpDataDir('none')
   const tarBuf = Buffer.from(
     await tarBlob.arrayBuffer()
   )
 
-  console.log('💾 Writing DB to disk...')
-  await fs.writeFile(OUT_DB_TAR, tarBuf)
-  await fs.writeFile(
-    OUT_DB_TAR_BR,
-    brotli(tarBuf)
-  )
-
-  const report = [
-    [basename(OUT_DB_TAR),
-      await fileSize(OUT_DB_TAR)],
-    [basename(OUT_DB_TAR_BR),
-      await fileSize(OUT_DB_TAR_BR)],
-  ].map(([f, s]) => ({ file: f, size: s }))
-
-  console.table(report)
+  // File size reporting moved after write
 
   // Demo query: encode text exactly like
   // the browser worker and run a vector
@@ -304,6 +311,35 @@ async function main() {
     'Top matches:',
     top.map(r => r.content)
   )
+
+  const writeCompressed = async () => {
+    if (fast) {
+      console.log('⏭️ Skipping compression...')
+      return
+    }
+
+    return await fs.writeFile(
+      OUT_DB_TAR_BR,
+      await brotli(tarBuf)
+    )
+  }
+
+  console.log('🚣 Writing DB files...')
+  await Promise.all([
+    // Write uncompressed DB
+    fs.writeFile(OUT_DB_TAR, tarBuf),
+    // Compress DB
+    writeCompressed(),
+  ])
+
+  const report = [
+    [basename(OUT_DB_TAR),
+      await fileSize(OUT_DB_TAR)],
+    [basename(OUT_DB_TAR_BR),
+      await fileSize(OUT_DB_TAR_BR)],
+  ].map(([f, s]) => ({ file: f, size: s }))
+
+  console.table(report)
 
   await db.close()
 }
