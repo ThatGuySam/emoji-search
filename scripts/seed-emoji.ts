@@ -19,15 +19,15 @@ import {
 import { basename } from 'node:path'
 import { argv } from 'node:process'
 import { PGlite } from '@electric-sql/pglite'
-import { vector } from '@electric-sql/pglite/vector'
 import { env, pipeline } from
   '@huggingface/transformers'
+// https://github.com/muan/emojilib
+import Emojilib from 'emojilib'
 import { MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   SUPA_GTE_SMALL } from
   '../src/constants'
-// https://github.com/muan/emojilib
-import Emojilib from 'emojilib'
+import { getDB } from '../src/utils/db'
 
 
 const [
@@ -277,19 +277,16 @@ async function main() {
   const rows = buildEmojiRows()
 
   console.log('🚣 Building emoji DB...')
-  const db = new PGlite({
-    extensions: { vector },
-  })
-  await db.waitReady
+  const mojiDb = await getDB()
 
   console.log('🚣 Initializing schema...')
-  await initSchema(db)
+  await initSchema(mojiDb)
 
   console.log('🚣 Inserting embeddings...')
-  await insertEmbeddings(db, rows)
+  await insertEmbeddings(mojiDb, rows)
 
   console.log('🚣 Dumping DB to memory...')
-  const tarBlob = await db.dumpDataDir('none')
+  const tarBlob = await mojiDb.dumpDataDir('none')
   const tarBuf = Buffer.from(
     await tarBlob.arrayBuffer()
   )
@@ -305,7 +302,7 @@ async function main() {
     queryText, enc
   )
   const top = await searchEmbeddings(
-    db, qVec, 0.8, 5
+    mojiDb, qVec, 0.8, 5
   )
   console.log(
     'Top matches:',
@@ -341,7 +338,7 @@ async function main() {
 
   console.table(report)
 
-  await db.close()
+  await mojiDb.close()
 }
 
 main().catch((e) => {
