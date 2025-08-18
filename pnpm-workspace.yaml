@@ -1,4 +1,5 @@
 onlyBuiltDependencies:
+  - '@mongodb-js/zstd'
   - onnxruntime-node
   - protobufjs
   - sharp
