@@ -1,15 +1,13 @@
 import type { PGlite } from "@electric-sql/pglite";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { EmbeddingEntry } from "../utils/db";
-import { initSchema, countRows, seedDb, search, loadPrebuiltDb } from "../utils/db";
+import { initSchema, countRows, search, loadPrebuiltDb, seedDbFromEmbBin, loadDBFromEmbedBin } from "../utils/db";
 import OptimusWorker from "../utils/worker.ts?worker";
-import { DB_TAR_BR } from "../constants";
-import dbTarUrl from
-  '../artifacts/emoji.tar.br?url'
+import embeddingsBinUrl from
+  '../artifacts/embeddings.bin.br?url'
 
 export default function App() {
   // Keep track of the classification result and the model loading status.
-  const [input, setInput] = useState<string>("");
   const [content, setContent] = useState<string[]>([]);
   const [result, setResult] = useState<string[] | null>(null);
   const [ready, setReady] = useState<boolean | null>(null);
@@ -23,15 +21,14 @@ export default function App() {
   useEffect(() => {
     const setup = async () => {
       initailizing.current = true;
-      console.log('Loading DB from', dbTarUrl)
-      db.current = await loadPrebuiltDb({
-        url: dbTarUrl
+      console.log('Loading DB from', embeddingsBinUrl)
+      db.current = await loadDBFromEmbedBin({
+        binUrl: embeddingsBinUrl
       });
       await initSchema(db.current);
       let count = await countRows(db.current, "embeddings");
       console.log(`Found ${count} rows`);
       if (count === 0) {
-        await seedDb(db.current);
         count = await countRows(db.current, "embeddings");
         console.log(`Seeded ${count} rows`);
       }
