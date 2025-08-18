@@ -1,6 +1,9 @@
 {
     "cSpell.words": [
+        "dtype",
         "emojilib",
+        "hnsw",
+        "huggingface",
         "pglite"
     ]
 }
