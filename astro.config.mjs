@@ -11,7 +11,10 @@ export default defineConfig({
 
   vite: {
     optimizeDeps: {
-      exclude: ['@electric-sql/pglite']
+      exclude: [
+        '@electric-sql/pglite',
+        '@bokuweb/zstd-wasm'
+      ]
     },
     assetsInclude: [
       '**/*.tar',
