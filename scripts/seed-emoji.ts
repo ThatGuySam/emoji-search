@@ -26,7 +26,9 @@ import Emojilib from 'emojilib'
 import { DB_TAR, DB_TAR_BR, MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   OUT_DIR,
-  SUPA_GTE_SMALL } from
+  SUPA_GTE_SMALL,
+  DB_TAR_ZST
+} from
   '../src/constants'
 import { getDB } from '../src/utils/db'
 
@@ -68,6 +70,23 @@ async function brotli(
         data.byteLength,
     },
   })
+}
+
+/**
+ * Zstandard at high level for static assets.
+ * Uses dynamic import to avoid ESM/CJS frictions.
+ */
+async function zstd(
+  data: Buffer | Uint8Array,
+  level = 19,
+) {
+  const { compress } = await import(
+    '@mongodb-js/zstd'
+  )
+  const out = await compress(
+    Buffer.from(data), level
+  )
+  return Buffer.from(out)
 }
 
 /**
@@ -309,26 +328,48 @@ async function main() {
       return
     }
 
-    return await fs.writeFile(
+    const br = await fs.writeFile(
       DB_TAR_BR,
       await brotli(tarBuf)
     )
+
+    console.log('🚣 Brotli compressed DB to', br)
+
+    return br
+  }
+
+  const writeZstd = async () => {
+    // if (fast) return
+    const buf = await zstd(tarBuf, 19)
+    const zst = await fs.writeFile(
+      DB_TAR_ZST, buf
+    )
+
+    console.log('🚣 Zstd compressed DB to', zst)
+
+    return zst
   }
 
   console.log('🚣 Writing DB files...')
   await Promise.all([
     // Write uncompressed DB
-    fs.writeFile(DB_TAR, tarBuf),
+    fs.writeFile(DB_TAR, tarBuf).then(
+      () => console.log('🚣 Uncompressed DB written')
+    ),
     // Compress DB
     writeCompressed(),
+    // Compress DB (Zstd)
+    writeZstd(),
   ])
 
   const files = [
     DB_TAR,
+    DB_TAR_ZST,
   ]
 
   if (!fast) {
     files.push(DB_TAR_BR)
+    // files.push(DB_TAR_ZST)
   }
 
   const report = (await Promise.all(
