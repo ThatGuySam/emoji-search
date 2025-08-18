@@ -2,6 +2,11 @@ import type { FeatureExtractionPipeline } from '@huggingface/transformers'
 import { env, pipeline } from '@huggingface/transformers'
 import { MODELS_HOST, MODELS_PATH_TEMPLATE, SUPA_GTE_SMALL } from '../constants'
 
+/**
+ * Transformers.js V3 Env options
+ * https://github.com/huggingface/transformers.js/blob/v3/src/env.js
+ */
+
 // keep remote, but point to your host (CORS required)
 env.allowRemoteModels = true
 env.remoteHost = MODELS_HOST
