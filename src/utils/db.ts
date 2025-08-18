@@ -1,10 +1,10 @@
 import { PGlite } from '@electric-sql/pglite'
 import { vector } from '@electric-sql/pglite/vector'
 
-const hasWindow = typeof globalThis !== 'undefined'
-  && 'window' in globalThis
+// const hasWindow = typeof globalThis !== 'undefined'
+//   && 'window' in globalThis?
 
-const DEFAULT_IDB_URL = 'idb://supa-semantic-search'
+// const DEFAULT_IDB_URL = 'idb://supa-semantic-search'
 
 
 export interface EmbeddingEntry {
@@ -26,7 +26,6 @@ export async function getDB( options: {
   
   try {
     const metaDb = new PGlite({
-        dataDir: hasWindow ? DEFAULT_IDB_URL : undefined,
         loadDataDir,
         extensions: {
           vector,
@@ -59,8 +58,7 @@ export async function loadPrebuiltDb(
   // Close existing handle to avoid name
   // conflicts before we restore data.
   if (dbInstance) {
-    await dbInstance.close()
-    dbInstance = null
+    throw new Error('DB already loaded, cannot load into existing instance')
   }
 
   const resp = await fetch(url, {
@@ -98,7 +96,7 @@ export async function loadPrebuiltDb(
 
   // Restore into our IDB-backed database
   // and return the ready connection.
-  const db = getDB({
+  const db = await getDB({
     loadDataDir: tarBlob
   })
   return db
