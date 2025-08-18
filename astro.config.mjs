@@ -17,6 +17,10 @@ export default defineConfig({
       '**/*.tar',
       '**/*.tar.br',
     ],
+    build: {
+      // Ship sourcemaps to prod
+      sourcemap: true
+    }
   },
 
   // adapter: cloudflare()
