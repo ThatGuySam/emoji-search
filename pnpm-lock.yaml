@@ -29,6 +29,9 @@ importers:
       astro:
         specifier: ^5.13.0
         version: 5.13.0(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2)
+      emojilib:
+        specifier: ^4.0.2
+        version: 4.0.2
       react:
         specifier: ^19.1.1
         version: 19.1.1
@@ -1290,6 +1293,9 @@ packages:
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
+
+  emojilib@4.0.2:
+    resolution: {integrity: sha512-8sP3sfAi861cNaFFp7RmyKi4S26K34ZKy4si75ojUW627AIVBHhMSu2SFJo3YRoK66YWnbysIbOk/d48uEqtKQ==}
 
   entities@6.0.1:
     resolution: {integrity: sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g==}
@@ -3501,6 +3507,8 @@ snapshots:
   emoji-regex@10.4.0: {}
 
   emoji-regex@8.0.0: {}
+
+  emojilib@4.0.2: {}
 
   entities@6.0.1: {}
 
