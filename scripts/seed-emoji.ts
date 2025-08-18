@@ -23,8 +23,9 @@ import { env, pipeline } from
   '@huggingface/transformers'
 // https://github.com/muan/emojilib
 import Emojilib from 'emojilib'
-import { MODELS_HOST,
+import { DB_TAR, DB_TAR_BR, MODELS_HOST,
   MODELS_PATH_TEMPLATE,
+  OUT_DIR,
   SUPA_GTE_SMALL } from
   '../src/constants'
 import { getDB } from '../src/utils/db'
@@ -50,10 +51,6 @@ type Row = {
   /** keywords */
   // keywords: string[]
 }
-
-const OUT_DIR = './dist'
-const OUT_DB_TAR = `${OUT_DIR}/emoji.tar`
-const OUT_DB_TAR_BR = `${OUT_DB_TAR}.br`
 
 /**
  * Brotli at max quality for static assets.
@@ -316,7 +313,7 @@ async function main() {
     }
 
     return await fs.writeFile(
-      OUT_DB_TAR_BR,
+      DB_TAR_BR,
       await brotli(tarBuf)
     )
   }
@@ -324,17 +321,28 @@ async function main() {
   console.log('🚣 Writing DB files...')
   await Promise.all([
     // Write uncompressed DB
-    fs.writeFile(OUT_DB_TAR, tarBuf),
+    fs.writeFile(DB_TAR, tarBuf),
     // Compress DB
     writeCompressed(),
   ])
 
-  const report = [
-    [basename(OUT_DB_TAR),
-      await fileSize(OUT_DB_TAR)],
-    [basename(OUT_DB_TAR_BR),
-      await fileSize(OUT_DB_TAR_BR)],
-  ].map(([f, s]) => ({ file: f, size: s }))
+  const files = [
+    DB_TAR,
+  ]
+
+  if (!fast) {
+    files.push(DB_TAR_BR)
+  }
+
+  const report = (await Promise.all(
+    files.map(async (f) => [
+      basename(f),
+      await fileSize(f)
+    ])
+  )).map(([f, s]) => ({
+    file: f,
+    size: s
+  }))
 
   console.table(report)
 
