@@ -2,11 +2,11 @@ import { PGlite } from '@electric-sql/pglite'
 import { vector } from '@electric-sql/pglite/vector'
 
 const DEFAULT_IDB_URL = 'idb://supa-semantic-search'
-const DEFAULT_FILE_URL = './artifacts/emoji-db'
+const DEFAULT_DIR_URL = './src/artifacts/emoji-db'
 const DATA_DIR = (typeof globalThis !== 'undefined'
   && 'window' in globalThis)
   ? DEFAULT_IDB_URL
-  : DEFAULT_FILE_URL
+  : DEFAULT_DIR_URL
 
 export interface EmbeddingEntry {
     id: number
