@@ -1,8 +1,6 @@
 // https://github.com/muan/emojilib?tab=readme-ov-file
 import Emojilib from 'emojilib'
 
-export const emojiIndex = Emojilib
-
 interface EmojiRow {
     /** identifier */
     id: string
@@ -21,7 +19,7 @@ interface EmojiRow {
 export function buildEmojiRows(): EmojiRow[] {
     const map = new Map<string, Set<string>>()
   
-    const emojis = Object.entries(emojiIndex)
+    const emojis = Object.entries(Emojilib)
   
     for (const [kw, list] of emojis) {
       for (const ch of list) {
@@ -46,3 +44,5 @@ export function buildEmojiRows(): EmojiRow[] {
     }
     return rows
 }
+
+export const emojiIndex = buildEmojiRows()
