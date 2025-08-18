@@ -1,7 +1,7 @@
 import type { PGlite } from "@electric-sql/pglite";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { EmbeddingEntry } from "../utils/db";
-import { initSchema, countRows, search, loadPrebuiltDb, seedDbFromEmbBin, loadDBFromEmbedBin } from "../utils/db";
+import { countRows, search, loadDBFromEmbedBin } from "../utils/db";
 import OptimusWorker from "../utils/worker.ts?worker";
 import embeddingsBinUrl from
   '../artifacts/embeddings.bin.br?url'
@@ -25,7 +25,6 @@ export default function App() {
       db.current = await loadDBFromEmbedBin({
         binUrl: embeddingsBinUrl
       });
-      await initSchema(db.current);
       let count = await countRows(db.current, "embeddings");
       console.log(`Found ${count} rows`);
       if (count === 0) {
@@ -110,19 +109,15 @@ export default function App() {
       <pre className="bg-gray-100 p-2 mb-4 rounded">
         {JSON.stringify(content)}
       </pre>
-      <form
-        // onSubmit={(e) => {
-        //   e.preventDefault();
-        //   classify(input);
-        // }}
-      >
+      <form>
         <input
           type="text"
           className="w-full max-w-xs p-2 border border-gray-300 rounded mb-4"
           placeholder="Enter text here"
           onInput={(e: React.FormEvent<HTMLInputElement>) => {
             setResult([]);
-            classify(e.target.value as string);
+            const value = (e.target as HTMLInputElement).value
+            classify(value);
             // setInput(e.target.value as string);
           }}
         />
