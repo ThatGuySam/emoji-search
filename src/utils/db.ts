@@ -1,12 +1,11 @@
 import { PGlite } from '@electric-sql/pglite'
 import { vector } from '@electric-sql/pglite/vector'
 
+const hasWindow = typeof globalThis !== 'undefined'
+  && 'window' in globalThis
+
 const DEFAULT_IDB_URL = 'idb://supa-semantic-search'
-const DEFAULT_DIR_URL = './src/artifacts/emoji-db'
-const DATA_DIR = (typeof globalThis !== 'undefined'
-  && 'window' in globalThis)
-  ? DEFAULT_IDB_URL
-  : DEFAULT_DIR_URL
+
 
 export interface EmbeddingEntry {
     id: number
@@ -21,14 +20,21 @@ export async function getDB() {
   if (dbInstance) {
     return dbInstance
   }
-  const metaDb = new PGlite(DATA_DIR, {
-    extensions: {
-      vector,
-    },
-  })
-  await metaDb.waitReady
-  dbInstance = metaDb
-  return metaDb
+  
+  try {
+    const metaDb = new PGlite({
+        dataDir: hasWindow ? DEFAULT_IDB_URL : undefined,
+        extensions: {
+          vector,
+        },
+    })
+    await metaDb.waitReady
+    dbInstance = metaDb
+    return metaDb
+  } catch (e) {
+    console.error('DB init failed', e)
+    throw new Error('DB init failed')
+  }
 }
 
 /**
@@ -180,4 +186,4 @@ export const search = async (
       [JSON.stringify(embedding), -Number(match_threshold), Number(limit)]
     )
     return res.rows
-  }
+}
