@@ -21,18 +21,18 @@ import { argv } from 'node:process'
 import { PGlite } from '@electric-sql/pglite'
 import { env, pipeline } from
   '@huggingface/transformers'
-// https://github.com/muan/emojilib
-import Emojilib from 'emojilib'
 import zst from '@bokuweb/zstd-wasm';
 
 import { DB_TAR, DB_TAR_BR, MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   OUT_DIR,
   SUPA_GTE_SMALL,
-  DB_TAR_ZST
+  
 } from
   '../src/constants'
 import { getDB } from '../src/utils/db'
+import { packEmbeddingsBinary, type EmbeddingRow } from '../src/utils/embeddings'
+import { buildEmojiRows, emojiIndex } from '../src/utils/emoji'
 
 const [
   // Whether to do a faster test run with less data
@@ -40,7 +40,7 @@ const [
 ] = argv.slice(2)
 
 const FAST_LIMIT = 50
-const useBrotli = false
+const useBrotli: boolean = true
 
 /**
  * Row stored in JSON and DB.
@@ -115,41 +115,6 @@ async function fileSize(path: string) {
     (s.size / (1024 * 1024)).toFixed(2) +
     ' MB'
   )
-}
-
-/**
- * Build emoji -> keywords map from
- * emojilib (keyword -> emoji list).
- */
-function buildEmojiRows(): Row[] {
-  const map = new Map<string, Set<string>>()
-  const rowLimit = fast ? FAST_LIMIT : undefined
-
-  const emojis = Object.entries(Emojilib)
-    .slice(0, rowLimit)
-
-  for (const [kw, list] of emojis) {
-    for (const ch of list) {
-      if (!map.has(ch)) map.set(ch, new Set())
-      map.get(ch)!.add(kw)
-    }
-  }
-  const rows: Row[] = []
-  for (const [ch, set] of map) {
-    const keys = Array.from(set).sort()
-    const name = keys[0] ?? ch
-    const id = ch
-    rows.push({
-      id,
-      emoji: keys[0],
-      // name,
-      // keywords: keys,
-    })
-  }
-  if (rows.length === 0) {
-    throw new Error('no emojis found')
-  }
-  return rows
 }
 
 /**
@@ -260,6 +225,7 @@ async function insertEmbeddings(
   db: PGlite,
   rows: Row[],
 ) {
+  const all: EmbeddingRow[] = []
   const enc = await getEncoder()
   const batch = 64
   for (let i = 0; i < rows.length; i +=
@@ -294,7 +260,9 @@ async function insertEmbeddings(
         params
       )
     })
+    all.push(...embeds)
   }
+  return all
 }
 
 /**
@@ -304,7 +272,7 @@ async function main() {
   await fs.mkdir(OUT_DIR, { recursive: true })
 
   console.log('🚣 Building emoji rows...')
-  const rows = buildEmojiRows()
+  const rows = buildEmojiRows().slice(0, fast ? FAST_LIMIT : undefined)
 
   console.log('🚣 Building emoji DB...')
   const mojiDb = await getDB()
@@ -313,7 +281,9 @@ async function main() {
   await initSchema(mojiDb)
 
   console.log('🚣 Inserting embeddings...')
-  await insertEmbeddings(mojiDb, rows)
+  const embeds = await insertEmbeddings(
+    mojiDb, rows
+  )
 
   console.log('🚣 Dumping DB to memory...')
   const tarBlob = await mojiDb.dumpDataDir('none')
@@ -322,6 +292,40 @@ async function main() {
   )
 
   // File size reporting moved after write
+  // Write embeddings JSON for debugging
+  // and inspection alongside the DB.
+  const EMBED_JSON =
+    `${OUT_DIR}/embeddings.json`
+  const embedsStr = JSON.stringify(embeds)
+  const embedsBuf = Buffer.from(embedsStr)
+  await fs.writeFile(
+    EMBED_JSON,
+    embedsStr
+  )
+  const META_JSON =
+    `${OUT_DIR}/emoji-meta.json`
+  const meta = rows.map(r => ({
+    id: r.id,
+    content: `${r.emoji} ${r.id}`,
+  }))
+  await fs.writeFile(
+    META_JSON,
+    JSON.stringify(meta)
+  )
+
+  // Pack a compact int8 binary for web
+  const EMBED_BIN =
+    `${OUT_DIR}/embeddings.bin`
+  const embedBinBuf =
+    packEmbeddingsBinary(embeds)
+  await fs.writeFile(
+    EMBED_BIN, embedBinBuf
+  )
+  const EMBED_BIN_ZST =
+    `${EMBED_BIN}.zst`
+  const EMBED_BIN_BR =
+    `${EMBED_BIN}.br`
+
 
   // Demo query: encode text exactly like
   // the browser worker and run a vector
@@ -340,29 +344,31 @@ async function main() {
   )
 
   const writeCompressed = async () => {
-    if (fast || useBrotli) {
+    if (fast || !useBrotli) {
       console.log('⏭️ Skipping br compression...')
       return
     }
 
     const br = await fs.writeFile(
-      DB_TAR_BR,
-      await brotli(tarBuf)
+      EMBED_BIN_BR,
+      await brotli(embedBinBuf)
     )
 
-    console.log('🚣 Brotli compressed DB to', br)
+    console.log('🚣 Brotli compressed BIN to', br)
 
     return br
   }
 
   const writeZstd = async () => {
     // if (fast) return
-    const buf = await zstd(tarBuf, 19)
+    const buf = await zstd(
+      embedBinBuf, 19
+    )
     const zst = await fs.writeFile(
-      DB_TAR_ZST, buf
+      EMBED_BIN_ZST, buf
     )
 
-    console.log('🚣 Zstd compressed DB to', zst)
+    console.log('🚣 Zstd compressed BIN to', zst)
 
     return zst
   }
@@ -380,16 +386,16 @@ async function main() {
   ])
 
   // Verify .zst round-trip by reading
-  // the file and ensuring it matches
-  // the original tarBuf
+  // the BIN file and ensuring it matches
+  // the original packed binary buffer
   try {
     const zstBuf = await fs.readFile(
-      DB_TAR_ZST
+      EMBED_BIN_ZST
     )
     const dec = await zstdDecompress(
       zstBuf
     )
-    const same = dec.equals(tarBuf)
+    const same = dec.equals(embedBinBuf)
     console.log(
       '🚣 Zstd round-trip ok:', same
     )
@@ -406,12 +412,16 @@ async function main() {
 
   const files = [
     DB_TAR,
-    DB_TAR_ZST,
+    EMBED_JSON,
+    META_JSON,
+    EMBED_BIN,
+    EMBED_BIN_ZST,
   ]
 
   if (!fast) {
-    files.push(DB_TAR_BR)
-    // files.push(DB_TAR_ZST)
+    if (useBrotli) files.push(
+      EMBED_BIN_BR
+    )
   }
 
   const report = (await Promise.all(
