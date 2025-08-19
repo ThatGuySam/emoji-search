@@ -65,8 +65,8 @@ export async function loadPrebuiltDb(
   }
 
   const resp = await fetch(binUrl, {
-    // cache: 'force-cache',
-    cache: 'no-store',
+    cache: 'force-cache',
+    // cache: 'no-store',
   })
   if (!resp.ok) {
     throw new Error('failed to fetch db')
