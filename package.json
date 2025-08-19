@@ -12,7 +12,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "seed": "bun scripts/seed-emoji.ts",
-    "deploy": "pnpm seed && astro build && pnpm dlx wrangler deploy"
+    "fast-deploy": "astro build && pnpm dlx wrangler deploy",
+    "deploy": "pnpm seed && pnpm fast-deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.3",
