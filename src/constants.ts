@@ -8,3 +8,5 @@ export const DB_TAR = `${OUT_DIR}/emoji.tar`
 export const DB_TAR_BR = `${DB_TAR}.br`
 export const DB_TAR_GZ = `${DB_TAR}.gz`
 export const DB_TAR_ZST = `${DB_TAR}.zst`
+
+export const R2_TAR_URL = 'https://models.samcarlton.com/db/src/artifacts/emoji.tar'
