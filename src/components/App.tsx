@@ -3,10 +3,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import type { EmbeddingEntry } from "../utils/db";
 import { countRows, search, loadPrebuiltDb } from "../utils/db";
 import OptimusWorker from "../utils/worker.ts?worker";
+import { R2_TAR_URL } from "../constants";
 // import embeddingsBinUrl from
   // '../artifacts/embeddings.bin.br?url'
-import dbTarUrl from
-  '../artifacts/emoji.tar?url'
+// import dbTarUrl from
+//   '../artifacts/emoji.tar?url'
 
 export default function App() {
   // Keep track of the classification result and the model loading status.
@@ -23,9 +24,9 @@ export default function App() {
   useEffect(() => {
     const setup = async () => {
       initailizing.current = true;
-      console.log('Loading DB from', dbTarUrl)
+      console.log('Loading DB from', R2_TAR_URL)
       db.current = await loadPrebuiltDb({
-        binUrl: dbTarUrl
+        binUrl: R2_TAR_URL
       });
       let count = await countRows(db.current, "embeddings");
       console.log(`Found ${count} rows`);
