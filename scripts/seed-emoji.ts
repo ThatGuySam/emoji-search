@@ -24,11 +24,15 @@ import { env, pipeline } from
   '@huggingface/transformers'
 import zst from '@bokuweb/zstd-wasm';
 
-import { DB_TAR, MODELS_HOST,
+import {
+  DB_TAR,
+  DB_TAR_BR,
+  DB_TAR_GZ,
+  DB_TAR_ZST,
+  MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   OUT_DIR,
   SUPA_GTE_SMALL,
-  
 } from
   '../src/constants'
 import { getDB } from '../src/utils/db'
@@ -68,6 +72,7 @@ async function brotli(
 ) {
   return brotliCompressAsync(data, {
     params: {
+      // This only seems to give a 0.03mb reduction vs 4
       [z.BROTLI_PARAM_QUALITY]: 11,
       [z.BROTLI_PARAM_SIZE_HINT]:
         data.byteLength,
@@ -353,8 +358,8 @@ async function main() {
     }
 
     const br = await fs.writeFile(
-      EMBED_BIN_BR,
-      await brotli(embedBinBuf)
+      DB_TAR_BR,
+      await brotli(tarBuf)
     )
 
     console.log('🚣 Brotli compressed BIN to', br)
@@ -364,26 +369,26 @@ async function main() {
 
   const gzipAsync = promisify(gzipCompress)
   const writeGzip = async () => {
-    const gz = await fs.writeFile(
-      EMBED_BIN_GZ,
-      await gzipAsync(embedBinBuf)
+    await fs.writeFile(
+      DB_TAR_GZ,
+      await gzipAsync(tarBuf)
     )
-    console.log('🚣 Gzip compressed BIN to', gz)
-    return gz
+    console.log('🚣 Gzip compressed DB to', DB_TAR_GZ)
+    return
   }
 
   const writeZstd = async () => {
     // if (fast) return
     const buf = await zstd(
-      embedBinBuf, 19
+      tarBuf, 19
     )
-    const zst = await fs.writeFile(
-      EMBED_BIN_ZST, buf
+    await fs.writeFile(
+      DB_TAR_ZST, buf
     )
 
-    console.log('🚣 Zstd compressed BIN to', zst)
+    console.log('🚣 Zstd compressed BIN to', DB_TAR_ZST)
 
-    return zst
+    return
   }
 
   console.log('🚣 Writing DB files...')
@@ -432,6 +437,9 @@ async function main() {
     EMBED_BIN,
     EMBED_BIN_ZST,
     EMBED_BIN_GZ,
+    DB_TAR_BR,
+    DB_TAR_GZ,
+    DB_TAR_ZST,
   ]
 
   if (!fast) {
