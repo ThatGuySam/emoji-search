@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@astrojs/cloudflare':
         specifier: ^12.6.3
-        version: 12.6.3(@types/node@24.2.1)(astro@5.13.0(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2))
+        version: 12.6.3(@types/node@24.2.1)(astro@5.13.0(@types/node@24.2.1)(aws4fetch@1.0.20)(rollup@4.46.2)(typescript@5.9.2))
       '@astrojs/react':
         specifier: ^4.3.0
         version: 4.3.0(@types/node@24.2.1)(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
@@ -40,7 +40,10 @@ importers:
         version: 19.1.7(@types/react@19.1.10)
       astro:
         specifier: ^5.13.0
-        version: 5.13.0(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2)
+        version: 5.13.0(@types/node@24.2.1)(aws4fetch@1.0.20)(rollup@4.46.2)(typescript@5.9.2)
+      aws4fetch:
+        specifier: ^1.0.20
+        version: 1.0.20
       emojilib:
         specifier: ^4.0.2
         version: 4.0.2
@@ -1524,6 +1527,9 @@ packages:
     engines: {node: 18.20.8 || ^20.3.0 || >=22.0.0, npm: '>=9.6.5', pnpm: '>=7.1.0'}
     hasBin: true
 
+  aws4fetch@1.0.20:
+    resolution: {integrity: sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g==}
+
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
     engines: {node: '>= 0.4'}
@@ -2927,12 +2933,12 @@ snapshots:
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.30
 
-  '@astrojs/cloudflare@12.6.3(@types/node@24.2.1)(astro@5.13.0(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2))':
+  '@astrojs/cloudflare@12.6.3(@types/node@24.2.1)(astro@5.13.0(@types/node@24.2.1)(aws4fetch@1.0.20)(rollup@4.46.2)(typescript@5.9.2))':
     dependencies:
       '@astrojs/internal-helpers': 0.7.1
       '@astrojs/underscore-redirects': 1.0.0
       '@cloudflare/workers-types': 4.20250813.0
-      astro: 5.13.0(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2)
+      astro: 5.13.0(@types/node@24.2.1)(aws4fetch@1.0.20)(rollup@4.46.2)(typescript@5.9.2)
       tinyglobby: 0.2.14
       vite: 6.3.5(@types/node@24.2.1)
       wrangler: 4.30.0(@cloudflare/workers-types@4.20250813.0)
@@ -4639,7 +4645,7 @@ snapshots:
 
   assertion-error@2.0.1: {}
 
-  astro@5.13.0(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2):
+  astro@5.13.0(@types/node@24.2.1)(aws4fetch@1.0.20)(rollup@4.46.2)(typescript@5.9.2):
     dependencies:
       '@astrojs/compiler': 2.12.2
       '@astrojs/internal-helpers': 0.7.1
@@ -4693,7 +4699,7 @@ snapshots:
       ultrahtml: 1.6.0
       unifont: 0.5.2
       unist-util-visit: 5.0.0
-      unstorage: 1.16.1
+      unstorage: 1.16.1(aws4fetch@1.0.20)
       vfile: 6.0.3
       vite: 6.3.5(@types/node@24.2.1)
       vitefu: 1.1.1(vite@6.3.5(@types/node@24.2.1))
@@ -4739,6 +4745,8 @@ snapshots:
       - typescript
       - uploadthing
       - yaml
+
+  aws4fetch@1.0.20: {}
 
   axobject-query@4.1.0: {}
 
@@ -6182,7 +6190,7 @@ snapshots:
       unist-util-is: 6.0.0
       unist-util-visit-parents: 6.0.1
 
-  unstorage@1.16.1:
+  unstorage@1.16.1(aws4fetch@1.0.20):
     dependencies:
       anymatch: 3.1.3
       chokidar: 4.0.3
@@ -6192,6 +6200,8 @@ snapshots:
       node-fetch-native: 1.6.7
       ofetch: 1.4.1
       ufo: 1.6.1
+    optionalDependencies:
+      aws4fetch: 1.0.20
 
   update-browserslist-db@1.1.3(browserslist@4.25.2):
     dependencies:
