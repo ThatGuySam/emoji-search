@@ -26,5 +26,6 @@ export default defineConfig({
     }
   },
 
+  // https://docs.astro.build/en/guides/deploy/cloudflare/#cloudflare-workers
   // adapter: cloudflare()
 });

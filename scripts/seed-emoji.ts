@@ -19,6 +19,7 @@ import {
 } from 'node:zlib'
 import { basename } from 'node:path'
 import { argv } from 'node:process'
+// https://pglite.dev/docs/api
 import { PGlite } from '@electric-sql/pglite'
 import { env, pipeline } from
   '@huggingface/transformers'
