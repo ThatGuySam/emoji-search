@@ -38,6 +38,7 @@ import {
 import { getDB } from '../src/utils/db'
 import { packEmbeddingsBinary, type EmbeddingRow } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
+import { upsertObject } from '../src/utils/r2.node'
 
 const [
   // Whether to do a faster test run with less data
@@ -447,6 +448,16 @@ async function main() {
       EMBED_BIN_BR
     )
   }
+
+  console.log('🚣 Uploading to R2...')
+  await Promise.all(
+    files.map(async (f) => {
+      await upsertObject({
+        key: `db/${f}`,
+        body: await fs.readFile(f),
+      })
+    })
+  )
 
   const report = (await Promise.all(
     files.map(async (f) => [
