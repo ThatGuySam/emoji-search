@@ -1,10 +1,12 @@
 import type { PGlite } from "@electric-sql/pglite";
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { EmbeddingEntry } from "../utils/db";
-import { countRows, search, loadDBFromEmbedBin } from "../utils/db";
+import { countRows, search, loadPrebuiltDb } from "../utils/db";
 import OptimusWorker from "../utils/worker.ts?worker";
-import embeddingsBinUrl from
-  '../artifacts/embeddings.bin.br?url'
+// import embeddingsBinUrl from
+  // '../artifacts/embeddings.bin.br?url'
+import dbTarUrl from
+  '../artifacts/emoji.tar?url'
 
 export default function App() {
   // Keep track of the classification result and the model loading status.
@@ -21,9 +23,9 @@ export default function App() {
   useEffect(() => {
     const setup = async () => {
       initailizing.current = true;
-      console.log('Loading DB from', embeddingsBinUrl)
-      db.current = await loadDBFromEmbedBin({
-        binUrl: embeddingsBinUrl
+      console.log('Loading DB from', dbTarUrl)
+      db.current = await loadPrebuiltDb({
+        binUrl: dbTarUrl
       });
       let count = await countRows(db.current, "embeddings");
       console.log(`Found ${count} rows`);

@@ -50,11 +50,13 @@ export async function getDB( options: {
  * then fall back to raw body when needed.
  */
 export async function loadPrebuiltDb(
-  options: { url: string },
+  options: { binUrl: string },
 ) {
-  const { url } = options
-  const isUncompressed = url.endsWith('.tar')
-  const isZstd = url.endsWith('.zst')
+  const startTime = performance.now()
+  const { binUrl } = options
+  const isUncompressed = binUrl.endsWith('.bin')
+  const isZstd = binUrl.endsWith('.bin.zst')
+  const isGzip = binUrl.endsWith('.bin.gz')
 
   // Close existing handle to avoid name
   // conflicts before we restore data.
@@ -62,12 +64,15 @@ export async function loadPrebuiltDb(
     throw new Error('DB already loaded, cannot load into existing instance')
   }
 
-  const resp = await fetch(url, {
-    cache: 'force-cache',
+  const resp = await fetch(binUrl, {
+    // cache: 'force-cache',
+    cache: 'no-store',
   })
   if (!resp.ok) {
     throw new Error('failed to fetch db')
   }
+
+  console.log('🔍 Content encoding', resp.headers.get('content-encoding'))
 
   // Decompress when needed. Support .zst via
   // zstd-wasm; fall back to Brotli stream; and
@@ -122,6 +127,10 @@ export async function loadPrebuiltDb(
   const db = await getDB({
     loadDataDir: tarBlob
   })
+
+  const endTime = performance.now()
+  console.log(`🏁 Loaded in ${endTime - startTime}ms`)
+
   return db
 }
 
@@ -133,7 +142,7 @@ export async function loadPrebuiltDb(
  * The metadata should be an array of
  * objects with either `content` or `id`.
  */
-export async function seedDbFromEmbBin(
+async function seedDbFromEmbBin(
   db: PGlite,
   options: {
     binUrl: string
@@ -205,6 +214,7 @@ export async function seedDbFromEmbBin(
 }
 
 export async function loadDBFromEmbedBin(options: { binUrl: string }) {
+  const startTime = performance.now()
   const { binUrl } = options
   const mojiDb = await getDB()
 
@@ -217,6 +227,9 @@ export async function loadDBFromEmbedBin(options: { binUrl: string }) {
   await seedDbFromEmbBin(mojiDb, {
     binUrl
   })
+
+  const endTime = performance.now()
+  console.log(`🏁 Initialized in ${endTime - startTime}ms`)
 
   return mojiDb
 }
