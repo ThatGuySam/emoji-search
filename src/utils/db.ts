@@ -267,7 +267,7 @@ export const search = async (
     db: PGlite,
     embedding: number[],
     match_threshold = 0.8,
-    limit = 10
+    limit = 20
 ) => {
     // Validate input embedding to ensure
     // correct vector dimensionality and type
