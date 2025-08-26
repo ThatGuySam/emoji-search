@@ -6,9 +6,11 @@
         "emojilib",
         "hnsw",
         "huggingface",
+        "mbps",
         "moji",
         "pglite",
         "sindresorhus",
-        "Upserts"
+        "Upserts",
+        "Xenova"
     ]
 }
