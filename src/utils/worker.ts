@@ -1,6 +1,6 @@
 import type { FeatureExtractionPipeline } from '@huggingface/transformers'
 import { env, pipeline } from '@huggingface/transformers'
-import { MODELS_HOST, MODELS_PATH_TEMPLATE, SUPA_GTE_SMALL } from '../constants'
+import { DATA_TYPE, MODELS_HOST, MODELS_PATH_TEMPLATE, SUPA_GTE_SMALL } from '../constants'
 
 /**
  * Transformers.js V3 Env options
@@ -33,7 +33,7 @@ class PipelineSingleton {
         this.model,
         {
           progress_callback,
-          dtype: 'fp32',
+          dtype: DATA_TYPE,
           device: ('gpu' in navigator)
             ? 'webgpu'
             : 'wasm',

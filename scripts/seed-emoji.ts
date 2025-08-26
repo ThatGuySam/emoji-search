@@ -26,6 +26,7 @@ import { env, pipeline } from
 import zst from '@bokuweb/zstd-wasm';
 
 import {
+  DATA_TYPE,
   DB_TAR,
   DB_TAR_BR,
   DB_TAR_GZ,
@@ -156,7 +157,7 @@ async function getEncoder() {
   const enc = await pipeline(
     'feature-extraction',
     SUPA_GTE_SMALL,
-    { dtype: 'fp32', device: 'cpu' }
+    { dtype: DATA_TYPE, device: 'cpu' }
   )
   return enc
 }
