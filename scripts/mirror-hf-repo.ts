@@ -21,7 +21,6 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { argv } from 'node:process'
-import { fileURLToPath } from 'node:url'
 
 import { upsertObject } from '../src/utils/r2.node'
 import { env } from '../src/env'
