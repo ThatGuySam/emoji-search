@@ -8,6 +8,7 @@
         "huggingface",
         "moji",
         "pglite",
-        "sindresorhus"
+        "sindresorhus",
+        "Upserts"
     ]
 }
