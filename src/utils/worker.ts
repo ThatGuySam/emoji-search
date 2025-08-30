@@ -1,6 +1,6 @@
 import type { FeatureExtractionPipeline } from '@huggingface/transformers'
 import { env, pipeline } from '@huggingface/transformers'
-import { DATA_TYPE, MODELS_HOST, MODELS_PATH_TEMPLATE, SUPA_GTE_SMALL } from '../constants'
+import { DATA_TYPE, MODELS_HOST, MODELS_PATH_TEMPLATE, DEFAULT_MODEL } from '../constants'
 
 /**
  * Transformers.js V3 Env options
@@ -21,7 +21,7 @@ env.remotePathTemplate = MODELS_PATH_TEMPLATE
 class PipelineSingleton {
   static task = 'feature-extraction' as const
   // Path to the model on the remote host
-  static model = `${SUPA_GTE_SMALL}` as const
+  static model = `${DEFAULT_MODEL}` as const
   static instance: FeatureExtractionPipeline | null = null
 
   static async getInstance(
