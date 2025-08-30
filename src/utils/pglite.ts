@@ -2,6 +2,7 @@ import { PGlite, type PGliteOptions } from "@electric-sql/pglite";
 import { vector } from '@electric-sql/pglite/vector'
 
 import type { DBDriver } from "./types";
+import { DEFAULT_DIMENSIONS } from "../constants";
 
 function defaultOptions({ loadDataDir }: PGliteOptions = {}): PGliteOptions {
     return {
@@ -58,4 +59,23 @@ export async function getDB( options: {
   }
 
   return await initPGLiteDriver({ loadDataDir })
+}
+
+/**
+ * Create embeddings schema.
+ */
+export async function initSchema(db: PGlite) {
+    await db.exec(`
+      create extension if not exists vector;
+      create table if not exists embeddings (
+        id bigint primary key
+          generated always as identity,
+        content text not null,
+        embedding vector(${DEFAULT_DIMENSIONS})
+      );
+      create index if not exists
+        embeddings_hnsw_ip
+      on embeddings
+        using hnsw (embedding vector_ip_ops);
+    `)
 }

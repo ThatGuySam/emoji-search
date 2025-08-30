@@ -21,8 +21,6 @@ import { basename } from 'node:path'
 import { argv } from 'node:process'
 // https://pglite.dev/docs/api
 import { PGlite } from '@electric-sql/pglite'
-import { env, pipeline } from
-  '@huggingface/transformers'
 import zst from '@bokuweb/zstd-wasm';
 
 import {
@@ -39,6 +37,7 @@ import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
 import type { EmbeddingRow, EmojiRow } from '../src/utils/types'
 import { encodeContent, getEncoder } from '../src/utils/hf'
+import { initSchema } from '../src/utils/pglite'
 
 const [
   // Whether to do a faster test run with less data
@@ -108,25 +107,6 @@ async function fileSize(path: string) {
     (s.size / (1024 * 1024)).toFixed(2) +
     ' MB'
   )
-}
-
-/**
- * Create embeddings schema.
- */
-async function initSchema(db: PGlite) {
-  await db.exec(`
-    create extension if not exists vector;
-    create table if not exists embeddings (
-      id bigint primary key
-        generated always as identity,
-      content text not null,
-      embedding vector(384)
-    );
-    create index if not exists
-      embeddings_hnsw_ip
-    on embeddings
-      using hnsw (embedding vector_ip_ops);
-  `)
 }
 
 /**
