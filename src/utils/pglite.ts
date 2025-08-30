@@ -1,8 +1,9 @@
 import { PGlite, type PGliteOptions } from "@electric-sql/pglite";
 import { vector } from '@electric-sql/pglite/vector'
 
-import type { DBDriver } from "./types";
+import type { DBDriver, EmbeddingRow, EmojiRow } from "./types";
 import { DEFAULT_DIMENSIONS } from "../constants";
+import { encodeContent, getEncoder } from "./hf";
 
 function defaultOptions({ loadDataDir }: PGliteOptions = {}): PGliteOptions {
     return {
@@ -78,4 +79,51 @@ export async function initSchema(db: PGlite) {
       on embeddings
         using hnsw (embedding vector_ip_ops);
     `)
+}
+
+/**
+ * Insert embeddings in batches.
+ */
+export async function insertEmbeddings(
+    db: PGlite,
+    rows: EmojiRow[],
+  ) {
+    const all: EmbeddingRow[] = []
+    const enc = await getEncoder()
+    const batch = 64
+    for (let i = 0; i < rows.length; i +=
+         batch) {
+      const slice = rows.slice(i, i + batch)
+      const embeds = await Promise.all(
+        slice.map(r => {
+          const content = `${r.emoji} ${r.id}`
+          return encodeContent(
+            content, enc
+          ).then(e => ({
+            content,
+            embedding: e,
+          }))
+        })
+      )
+      await db.transaction(async (tx) => {
+        const vals = embeds.map((_, j) =>
+          `($${j*2+1},$${j*2+2})`
+        ).join(',')
+        const params: unknown[] = []
+        for (const e of embeds) {
+          params.push(
+            e.content,
+            JSON.stringify(e.embedding)
+          )
+        }
+        await tx.query(
+          `insert into embeddings
+           (content, embedding)
+           values ${vals}`,
+          params
+        )
+      })
+      all.push(...embeds)
+    }
+    return all
 }

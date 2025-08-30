@@ -35,9 +35,8 @@ import { getDB } from '../src/utils/db'
 import { packEmbeddingsBinary } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
-import type { EmbeddingRow, EmojiRow } from '../src/utils/types'
 import { encodeContent, getEncoder } from '../src/utils/hf'
-import { initSchema } from '../src/utils/pglite'
+import { initSchema, insertEmbeddings } from '../src/utils/pglite'
 
 const [
   // Whether to do a faster test run with less data
@@ -135,53 +134,6 @@ async function searchEmbeddings(
     ]
   )
   return res.rows
-}
-
-/**
- * Insert embeddings in batches.
- */
-async function insertEmbeddings(
-  db: PGlite,
-  rows: EmojiRow[],
-) {
-  const all: EmbeddingRow[] = []
-  const enc = await getEncoder()
-  const batch = 64
-  for (let i = 0; i < rows.length; i +=
-       batch) {
-    const slice = rows.slice(i, i + batch)
-    const embeds = await Promise.all(
-      slice.map(r => {
-        const content = `${r.emoji} ${r.id}`
-        return encodeContent(
-          content, enc
-        ).then(e => ({
-          content,
-          embedding: e,
-        }))
-      })
-    )
-    await db.transaction(async (tx) => {
-      const vals = embeds.map((_, j) =>
-        `($${j*2+1},$${j*2+2})`
-      ).join(',')
-      const params: unknown[] = []
-      for (const e of embeds) {
-        params.push(
-          e.content,
-          JSON.stringify(e.embedding)
-        )
-      }
-      await tx.query(
-        `insert into embeddings
-         (content, embedding)
-         values ${vals}`,
-        params
-      )
-    })
-    all.push(...embeds)
-  }
-  return all
 }
 
 /**
