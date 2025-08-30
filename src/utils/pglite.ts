@@ -5,63 +5,6 @@ import type { DBDriver, EmbeddingRow, EmojiRow } from "./types";
 import { DEFAULT_DIMENSIONS } from "../constants";
 import { encodeContent, getEncoder } from "./hf";
 
-function defaultOptions({ loadDataDir }: PGliteOptions = {}): PGliteOptions {
-    return {
-        loadDataDir,
-        extensions: {
-          vector,
-        },
-    }
-}
-
-/**
- * Initialize a new PGLite driver.
- * @param options 
- * @returns 
- */
-export async function initPGLiteDriver (options: PGliteOptions = {}): Promise<DBDriver> {
-    try {
-        const metaDb = new PGlite(
-            defaultOptions(options)
-        )
-        await metaDb.waitReady
-        return metaDb
-    } catch (e) {
-        console.error('DB init failed', e)
-        throw new Error('DB init failed')
-    }
-}
-
-let dbInstance: PGlite | null = null
-
-/**
- * Ensure a PGLite driver is initialized and return it.
- * @param options 
- * @returns 
- */
-export async function ensurePGLiteDriver(options: PGliteOptions = {}): Promise<DBDriver> {
-    if (dbInstance) {
-        return dbInstance
-    }
-
-    const pgDriver = await initPGLiteDriver(options)
-
-    dbInstance = pgDriver
-    return pgDriver
-}
-
-// Implement a singleton pattern to make sure we only create one database instance.
-export async function getDB( options: {
-  loadDataDir?: PGliteOptions["loadDataDir"]
-} = {}) {
-  const { loadDataDir } = options
-  if (dbInstance) {
-    return dbInstance
-  }
-
-  return await initPGLiteDriver({ loadDataDir })
-}
-
 /**
  * Create embeddings schema.
  */
@@ -126,4 +69,89 @@ export async function insertEmbeddings(
       all.push(...embeds)
     }
     return all
+}
+
+/**
+ * Search by embedding vector (cosine/IP),
+ * mirroring src/utils/db.ts logic.
+ */
+export async function searchEmbeddings(
+    db: PGlite,
+    embedding: number[],
+    matchThreshold = 0.8,
+    limit = 5,
+  ) {
+    const res = await db.query<{
+      content: string
+    }>(
+      `
+      select content from embeddings
+      where embedding <#> $1 < $2
+      order by embedding <#> $1
+      limit $3;
+      `,
+      [
+        JSON.stringify(embedding),
+        -Number(matchThreshold),
+        Number(limit),
+      ]
+    )
+    return res.rows
+}
+
+function defaultOptions({ loadDataDir }: PGliteOptions = {}): PGliteOptions {
+    return {
+        loadDataDir,
+        extensions: {
+          vector,
+        },
+    }
+}
+
+/**
+ * Initialize a new PGLite driver.
+ * @param options 
+ * @returns 
+ */
+export async function initPGLiteDriver (options: PGliteOptions = {}): Promise<DBDriver> {
+    try {
+        const metaDb = new PGlite(
+            defaultOptions(options)
+        )
+        await metaDb.waitReady
+        return metaDb
+    } catch (e) {
+        console.error('DB init failed', e)
+        throw new Error('DB init failed')
+    }
+}
+
+let dbInstance: PGlite | null = null
+
+/**
+ * Ensure a PGLite driver is initialized and return it.
+ * @param options 
+ * @returns 
+ */
+export async function ensurePGLiteDriver(options: PGliteOptions = {}): Promise<DBDriver> {
+    if (dbInstance) {
+        return dbInstance
+    }
+
+    const pgDriver = await initPGLiteDriver(options)
+
+    dbInstance = pgDriver
+    return pgDriver
+}
+
+// Implement a singleton pattern to make sure we only create one database instance.
+export async function getDB( options: {
+  loadDataDir?: PGliteOptions["loadDataDir"]
+} = {}) {
+  const { loadDataDir } = options
+  if (dbInstance) {
+    return dbInstance
+  }
+
+  return await initPGLiteDriver({ loadDataDir })
 }

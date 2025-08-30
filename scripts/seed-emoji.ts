@@ -36,7 +36,7 @@ import { packEmbeddingsBinary } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
 import { encodeContent, getEncoder } from '../src/utils/hf'
-import { initSchema, insertEmbeddings } from '../src/utils/pglite'
+import { initSchema, insertEmbeddings, searchEmbeddings } from '../src/utils/pglite'
 
 const [
   // Whether to do a faster test run with less data
@@ -106,34 +106,6 @@ async function fileSize(path: string) {
     (s.size / (1024 * 1024)).toFixed(2) +
     ' MB'
   )
-}
-
-/**
- * Query embeddings table using inner
- * product (<#>). Mirrors app search.
- */
-async function searchEmbeddings(
-  db: PGlite,
-  embedding: number[],
-  matchThreshold = 0.8,
-  limit = 5,
-): Promise<Array<{ content: string }>> {
-  const res = await db.query<{
-    content: string
-  }>(
-    `
-    select content from embeddings
-    where embedding <#> $1 < $2
-    order by embedding <#> $1
-    limit $3;
-    `,
-    [
-      JSON.stringify(embedding),
-      -Number(matchThreshold),
-      Number(limit),
-    ]
-  )
-  return res.rows
 }
 
 /**
