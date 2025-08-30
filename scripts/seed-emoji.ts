@@ -26,15 +26,11 @@ import { env, pipeline } from
 import zst from '@bokuweb/zstd-wasm';
 
 import {
-  DATA_TYPE,
   DB_TAR,
   DB_TAR_BR,
   DB_TAR_GZ,
   DB_TAR_ZST,
-  MODELS_HOST,
-  MODELS_PATH_TEMPLATE,
   OUT_DIR,
-  SUPA_GTE_SMALL,
 } from
   '../src/constants'
 import { getDB } from '../src/utils/db'
