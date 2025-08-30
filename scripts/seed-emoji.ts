@@ -11,30 +11,20 @@
  */
 
 import fs from 'node:fs/promises'
-import { promisify } from 'node:util'
-import {
-  brotliCompress,
-  gzip as gzipCompress,
-  constants as z,
-} from 'node:zlib'
 import { basename, dirname } from 'node:path'
 import { argv } from 'node:process'
 import zst from '@bokuweb/zstd-wasm';
 
 import {
   DB_TAR,
-  DB_TAR_BR,
-  DB_TAR_GZ,
   DB_TAR_ZST,
   OUT_DIR,
 } from
   '../src/constants'
-import { getDB } from '../src/utils/db'
 import { packEmbeddingsBinary } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
-import { encodeContent, getEncoder } from '../src/utils/hf'
-import { initPGLiteDriver, initSchema, insertEmbeddings, searchEmbeddings } from '../src/utils/pglite'
+import { initPGLiteDriver } from '../src/utils/pglite'
 
 const [
   // Whether to do a faster test run with less data
@@ -42,26 +32,7 @@ const [
 ] = argv.slice(2)
 
 const FAST_LIMIT = 50
-const useBrotli: boolean = true
-
-/**
- * Brotli at max quality for static assets.
- */
-const brotliCompressAsync =
-  promisify(brotliCompress)
-
-async function brotli(
-  data: Buffer | Uint8Array,
-) {
-  return brotliCompressAsync(data, {
-    params: {
-      // This only seems to give a 0.03mb reduction vs 4
-      [z.BROTLI_PARAM_QUALITY]: 11,
-      [z.BROTLI_PARAM_SIZE_HINT]:
-        data.byteLength,
-    },
-  })
-}
+const useBrotli: boolean = false
 
 /**
  * Zstandard at high level for static assets.
@@ -168,10 +139,6 @@ async function main() {
   )
   const EMBED_BIN_ZST =
     `${EMBED_BIN}.zst`
-  const EMBED_BIN_BR =
-    `${EMBED_BIN}.br`
-  const EMBED_BIN_GZ =
-    `${EMBED_BIN}.gz`
 
 
   // Demo query: encode text exactly like
@@ -189,35 +156,6 @@ async function main() {
       row.content
     )
   )
-
-  const writeCompressed = async () => {
-    if (fast || !useBrotli) {
-      console.log('⏭️ Skipping br compression...')
-      return
-    }
-
-    await fs.writeFile(
-      DB_TAR_BR,
-      await brotli(tarBuf)
-    )
-
-    console.log(
-      '🚣 Brotli compressed DB to',
-      DB_TAR_BR
-    )
-
-    return
-  }
-
-  const gzipAsync = promisify(gzipCompress)
-  const writeGzip = async () => {
-    await fs.writeFile(
-      DB_TAR_GZ,
-      await gzipAsync(tarBuf)
-    )
-    console.log('🚣 Gzip compressed DB to', DB_TAR_GZ)
-    return
-  }
 
   const writeZstd = async () => {
     // if (fast) return
@@ -243,40 +181,16 @@ async function main() {
     return
   }
 
-  const writeEmbedGzip = async () => {
-    const gzipAsync = promisify(gzipCompress)
-    await fs.writeFile(
-      EMBED_BIN_GZ,
-      await gzipAsync(embedBinBuf)
-    )
-    return
-  }
-
-  const writeEmbedBrotli = async () => {
-    if (fast || !useBrotli) return
-    await fs.writeFile(
-      EMBED_BIN_BR,
-      await brotli(embedBinBuf)
-    )
-    return
-  }
-
   console.log('🚣 Writing DB files...')
   await Promise.all([
     // Write uncompressed DB
     fs.writeFile(DB_TAR, tarBuf).then(
       () => console.log('🚣 Uncompressed DB written')
     ),
-    // Compress DB
-    writeCompressed(),
     // Compress DB (Zstd)
     writeZstd(),
-    // Compress DB (Gzip)
-    writeGzip(),
     // Compress Embeddings BIN variants
     writeEmbedZstd(),
-    writeEmbedGzip(),
-    writeEmbedBrotli(),
   ])
 
   // Verify .zst round-trip by reading
@@ -310,17 +224,8 @@ async function main() {
     META_JSON,
     EMBED_BIN,
     EMBED_BIN_ZST,
-    EMBED_BIN_GZ,
-    DB_TAR_BR,
-    DB_TAR_GZ,
     DB_TAR_ZST,
   ]
-
-  if (!fast) {
-    if (useBrotli) files.push(
-      EMBED_BIN_BR
-    )
-  }
 
   console.log('🚣 Uploading to R2...')
   await Promise.all(
