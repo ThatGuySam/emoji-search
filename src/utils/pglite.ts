@@ -1,3 +1,4 @@
+// https://pglite.dev/docs/api
 import { PGlite, type PGliteOptions } from "@electric-sql/pglite";
 import { vector } from '@electric-sql/pglite/vector'
 

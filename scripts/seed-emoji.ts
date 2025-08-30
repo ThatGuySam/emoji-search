@@ -19,8 +19,6 @@ import {
 } from 'node:zlib'
 import { basename, dirname } from 'node:path'
 import { argv } from 'node:process'
-// https://pglite.dev/docs/api
-import { PGlite } from '@electric-sql/pglite'
 import zst from '@bokuweb/zstd-wasm';
 
 import {
@@ -36,7 +34,7 @@ import { packEmbeddingsBinary } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
 import { encodeContent, getEncoder } from '../src/utils/hf'
-import { initSchema, insertEmbeddings, searchEmbeddings } from '../src/utils/pglite'
+import { initPGLiteDriver, initSchema, insertEmbeddings, searchEmbeddings } from '../src/utils/pglite'
 
 const [
   // Whether to do a faster test run with less data
@@ -123,18 +121,18 @@ async function main() {
   const rows = emojiIndex.slice(0, fast ? FAST_LIMIT : undefined)
 
   console.log('🚣 Building emoji DB...')
-  const mojiDb = await getDB()
+  const mojiDb = await initPGLiteDriver()
 
   console.log('🚣 Initializing schema...')
-  await initSchema(mojiDb)
+  await mojiDb.initSchema()
 
   console.log('🚣 Inserting embeddings...')
   const embeds = await insertEmbeddings(
-    mojiDb, rows
+    mojiDb.api, rows
   )
 
   console.log('🚣 Dumping DB to memory...')
-  const tarBlob = await mojiDb.dumpDataDir('none')
+  const tarBlob = await mojiDb.api.dumpDataDir('none')
   const tarBuf = Buffer.from(
     await tarBlob.arrayBuffer()
   )
@@ -180,8 +178,7 @@ async function main() {
   // the browser worker and run a vector
   // search using inner product.
   const queryText = 'shout'
-  const top = await searchEmbeddings(
-    mojiDb,
+  const top = await mojiDb.searchEmbeddings(
     queryText,
     0.8,
     5
@@ -345,7 +342,7 @@ async function main() {
 
   console.table(report)
 
-  await mojiDb.close()
+  await mojiDb.api.close()
 }
 
 main().catch((e) => {
