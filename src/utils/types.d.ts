@@ -16,7 +16,14 @@ export interface EmojiRow {
     // keywords: string[]
 }
 
-export interface DBDriver extends PGlite {}
+export interface DBDriver {
+    initSchema: () => Promise<void>
+    insertEmbeddings: (rows: EmojiRow[]) => Promise<EmbeddingRow[]>
+    searchEmbeddings: (text: string, matchThreshold?: number, limit?: number) => Promise<EmbeddingRow[]>
+
+    /* Internal DB API */
+    api: PGlite
+}
 
 export interface DBDriverOptions {
     driver: DBDriver

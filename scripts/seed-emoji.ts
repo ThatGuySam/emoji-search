@@ -145,7 +145,6 @@ async function main() {
   const EMBED_JSON =
     `${OUT_DIR}/embeddings.json`
   const embedsStr = JSON.stringify(embeds)
-  const embedsBuf = Buffer.from(embedsStr)
   await fs.writeFile(
     EMBED_JSON,
     embedsStr
@@ -180,13 +179,12 @@ async function main() {
   // Demo query: encode text exactly like
   // the browser worker and run a vector
   // search using inner product.
-  const enc = await getEncoder()
   const queryText = 'shout'
-  const qVec = await encodeContent(
-    queryText, enc
-  )
   const top = await searchEmbeddings(
-    mojiDb, qVec, 0.8, 5
+    mojiDb,
+    queryText,
+    0.8,
+    5
   )
   console.log(
     'Top matches:',
