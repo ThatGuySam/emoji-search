@@ -20,6 +20,10 @@ const queries = [
   ]
 }[];
 
+// const drivers = {
+//   'pglite': ensurePGLiteDriver,
+// }
+
 describe('search with pglite driver', () => {
   beforeAll(async () => {
     const pgDriver = await ensurePGLiteDriver()
@@ -28,23 +32,22 @@ describe('search with pglite driver', () => {
       driver: pgDriver
     })
   })
-  for (const query of queries) {
-    it(`should search for ${query.term}`, async () => {
-      const { term, expectedResults } = query
-      const pgDriver = await ensurePGLiteDriver()
-      const results = await search({
-        term,
-        driver: pgDriver
-      })
-
-      for (const expectedResult of expectedResults) {
-        const matchingResult = results.find(result => result.emoji === expectedResult.emoji)
-        // Should be equal to or less than rank
-        expect(matchingResult).contain({ emoji: expectedResult.emoji })
-        expect(matchingResult?.rank).toBeLessThanOrEqual(expectedResult.rank)
-      }
+  
+  it.each(queries)(`should search for $term`, async (query, driver) => {
+    const { term, expectedResults } = query
+    const pgDriver = await ensurePGLiteDriver()
+    const results = await search({
+      term,
+      driver: pgDriver
     })
-  }
+
+    for (const expectedResult of expectedResults) {
+      const matchingResult = results.find(result => result.emoji === expectedResult.emoji)
+      // Should be equal to or less than rank
+      expect(matchingResult).contain({ emoji: expectedResult.emoji })
+      expect(matchingResult?.rank).toBeLessThanOrEqual(expectedResult.rank)
+    }
+  })
 })
 
 
