@@ -2,6 +2,11 @@ export const MODELS_HOST = 'https://models.samcarlton.com'
 export const MODELS_PATH_TEMPLATE = '{model}/resolve/{revision}/'
 // https://huggingface.co/Supabase/gte-small/tree/main
 export const SUPA_GTE_SMALL = 'supabase/gte-small'
+export const SUPA_DIMENSIONS = 384
+
+export const DEFAULT_MODEL = SUPA_GTE_SMALL
+export const DEFAULT_DIMENSIONS = SUPA_DIMENSIONS
+
 export const DATA_TYPE = 'fp32'
 
 export const OUT_DIR = './src/artifacts'

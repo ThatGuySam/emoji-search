@@ -42,7 +42,7 @@ import { packEmbeddingsBinary } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
 import type { EmbeddingRow, EmojiRow } from '../src/utils/types'
-import { getEncoder } from '../src/utils/hf'
+import { encodeContent, getEncoder } from '../src/utils/hf'
 
 const [
   // Whether to do a faster test run with less data
@@ -131,43 +131,6 @@ async function initSchema(db: PGlite) {
     on embeddings
       using hnsw (embedding vector_ip_ops);
   `)
-}
-
-/**
- * Ensure vector is 384 numbers.
- */
-function assertEmbedding(vec: number[]) {
-  if (!Array.isArray(vec) ||
-      vec.length !== 384 ||
-      !vec.every(n => Number.isFinite(n))) {
-    throw new Error('len 384 number[]')
-  }
-}
-
-/**
- * Encode content to embedding.
- */
-async function encodeContent(
-  content: string,
-  enc: Awaited<ReturnType<
-    typeof getEncoder
-  >>,
-) {
-  const out = await enc(content, {
-    pooling: 'mean',
-    normalize: true,
-  })
-  // transformers.js returns a typed array at
-  // runtime. Cast narrowly and normalize to
-  // a plain number[].
-  const raw = (out as unknown as {
-    data: Float32Array | number[]
-  }).data
-  const arr = Array.isArray(raw)
-    ? raw.slice()
-    : Array.from(raw)
-  assertEmbedding(arr)
-  return arr
 }
 
 /**
