@@ -20,7 +20,7 @@ const queries = [
   ]
 }[];
 
-describe('search by embedding', () => {
+describe('search with pglite driver', () => {
   beforeAll(async () => {
     const pgDriver = await ensurePGLiteDriver()
     await storeDocsFromEmojiIndex({
