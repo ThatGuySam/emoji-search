@@ -125,6 +125,10 @@ export async function initPGLiteDriver (options: PGliteOptions = {}): Promise<DB
             defaultOptions(options)
         )
         await api.waitReady
+        
+        // Initialize schema
+        await initSchema(api)
+
         return {
             initSchema: () => initSchema(api),
             insertEmbeddings: (rows: EmojiRow[]) => insertEmbeddings(api, rows),

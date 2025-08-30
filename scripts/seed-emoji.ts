@@ -94,9 +94,6 @@ async function main() {
   console.log('🚣 Building emoji DB...')
   const mojiDb = await initPGLiteDriver()
 
-  console.log('🚣 Initializing schema...')
-  await mojiDb.initSchema()
-
   console.log('🚣 Inserting embeddings...')
   const embeds = await mojiDb.insertEmbeddings(
     rows
