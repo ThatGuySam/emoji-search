@@ -17,7 +17,7 @@ import {
   gzip as gzipCompress,
   constants as z,
 } from 'node:zlib'
-import { basename } from 'node:path'
+import { basename, dirname } from 'node:path'
 import { argv } from 'node:process'
 // https://pglite.dev/docs/api
 import { PGlite } from '@electric-sql/pglite'
@@ -109,15 +109,15 @@ async function fileSize(path: string) {
 }
 
 /**
- * Search by embedding vector (cosine/IP),
- * mirroring src/utils/db.ts logic.
+ * Query embeddings table using inner
+ * product (<#>). Mirrors app search.
  */
 async function searchEmbeddings(
   db: PGlite,
   embedding: number[],
   matchThreshold = 0.8,
   limit = 5,
-) {
+): Promise<Array<{ content: string }>> {
   const res = await db.query<{
     content: string
   }>(
@@ -141,6 +141,11 @@ async function searchEmbeddings(
  */
 async function main() {
   await fs.mkdir(OUT_DIR, { recursive: true })
+  // Ensure nested dir (e.g. supabase/gte-small-384)
+  // exists before writing DB tar files.
+  await fs.mkdir(dirname(DB_TAR), {
+    recursive: true,
+  })
 
   console.log('🚣 Building emoji rows...')
   const rows = emojiIndex.slice(0, fast ? FAST_LIMIT : undefined)
@@ -213,7 +218,9 @@ async function main() {
   )
   console.log(
     'Top matches:',
-    top.map(r => r.content)
+    top.map((row: { content: string }) =>
+      row.content
+    )
   )
 
   const writeCompressed = async () => {
@@ -222,14 +229,17 @@ async function main() {
       return
     }
 
-    const br = await fs.writeFile(
+    await fs.writeFile(
       DB_TAR_BR,
       await brotli(tarBuf)
     )
 
-    console.log('🚣 Brotli compressed BIN to', br)
+    console.log(
+      '🚣 Brotli compressed DB to',
+      DB_TAR_BR
+    )
 
-    return br
+    return
   }
 
   const gzipAsync = promisify(gzipCompress)
@@ -251,8 +261,36 @@ async function main() {
       DB_TAR_ZST, buf
     )
 
-    console.log('🚣 Zstd compressed BIN to', DB_TAR_ZST)
+    console.log('🚣 Zstd compressed DB to', DB_TAR_ZST)
 
+    return
+  }
+
+  const writeEmbedZstd = async () => {
+    const buf = await zstd(
+      embedBinBuf, 19
+    )
+    await fs.writeFile(
+      EMBED_BIN_ZST, buf
+    )
+    return
+  }
+
+  const writeEmbedGzip = async () => {
+    const gzipAsync = promisify(gzipCompress)
+    await fs.writeFile(
+      EMBED_BIN_GZ,
+      await gzipAsync(embedBinBuf)
+    )
+    return
+  }
+
+  const writeEmbedBrotli = async () => {
+    if (fast || !useBrotli) return
+    await fs.writeFile(
+      EMBED_BIN_BR,
+      await brotli(embedBinBuf)
+    )
     return
   }
 
@@ -268,6 +306,10 @@ async function main() {
     writeZstd(),
     // Compress DB (Gzip)
     writeGzip(),
+    // Compress Embeddings BIN variants
+    writeEmbedZstd(),
+    writeEmbedGzip(),
+    writeEmbedBrotli(),
   ])
 
   // Verify .zst round-trip by reading
@@ -316,10 +358,8 @@ async function main() {
   console.log('🚣 Uploading to R2...')
   await Promise.all(
     files.map(async (f) => {
-      await upsertObject({
-        key: `db/${f}`,
-        body: await fs.readFile(f),
-      })
+      const key = 'db/' + f.replace(/^\.\//, '')
+      await upsertObject({ key, body: await fs.readFile(f) })
     })
   )
 
