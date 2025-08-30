@@ -20,11 +20,14 @@ const queries = [
   ]
 }[];
 
-// const drivers = {
-//   'pglite': ensurePGLiteDriver,
-// }
+const drivers = [
+  {
+    name: 'pglite',
+    ensureDriver: ensurePGLiteDriver,
+  }
+]
 
-describe('search with pglite driver', () => {
+describe.for(drivers)('search with $name driver', (driver) => {
   beforeAll(async () => {
     const pgDriver = await ensurePGLiteDriver()
     await storeDocsFromEmojiIndex({
@@ -33,7 +36,7 @@ describe('search with pglite driver', () => {
     })
   })
   
-  it.each(queries)(`should search for $term`, async (query, driver) => {
+  it.for(queries)(`should search for $term`, async (query, driver) => {
     const { term, expectedResults } = query
     const pgDriver = await ensurePGLiteDriver()
     const results = await search({
