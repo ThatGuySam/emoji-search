@@ -38,9 +38,10 @@ import {
 } from
   '../src/constants'
 import { getDB } from '../src/utils/db'
-import { packEmbeddingsBinary, type EmbeddingRow } from '../src/utils/embeddings'
+import { packEmbeddingsBinary } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
+import type { EmbeddingRow, EmojiRow } from '../src/utils/types'
 
 const [
   // Whether to do a faster test run with less data
@@ -49,20 +50,6 @@ const [
 
 const FAST_LIMIT = 50
 const useBrotli: boolean = true
-
-/**
- * Row stored in JSON and DB.
- */
-type Row = {
-  /** identifier */
-  id: string
-  /** emoji glyph */
-  emoji: string
-  /** short name */
-  // name: string
-  /** keywords */
-  // keywords: string[]
-}
 
 /**
  * Brotli at max quality for static assets.
@@ -232,7 +219,7 @@ async function searchEmbeddings(
  */
 async function insertEmbeddings(
   db: PGlite,
-  rows: Row[],
+  rows: EmojiRow[],
 ) {
   const all: EmbeddingRow[] = []
   const enc = await getEncoder()

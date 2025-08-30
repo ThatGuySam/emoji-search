@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import {
   packEmbeddingsBinary,
   decodeEmbeddingsBinary,
-  type EmbeddingRow,
 } from './embeddings'
 import { PGlite } from '@electric-sql/pglite'
 import { vector } from '@electric-sql/pglite/vector'
+import type { EmbeddingRow } from './types'
 
 function l2norm(v: number[]) {
   let s = 0
