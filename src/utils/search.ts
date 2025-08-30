@@ -9,8 +9,10 @@ interface StoreDocsOptions extends DBDriverOptions {
     queries: EmojiRow[]
 }
 
-export async function storeDocs({ queries }: StoreDocsOptions) {
-  return queries
+export async function storeDocs(options: StoreDocsOptions) {
+    const { driver } = options
+
+    return await driver.insertEmbeddings(options.queries)
 }
 
 interface StoreDocsFromEmojiIndexOptions extends DBDriverOptions {
@@ -23,7 +25,6 @@ export async function storeDocsFromEmojiIndex(options: StoreDocsFromEmojiIndexOp
     const queries: EmojiRow[] = emojiIndex.map(row => ({
         id: row.id,
         emoji: row.emoji,
-        // embedding: row.embedding
     }))
 
     return await storeDocs({

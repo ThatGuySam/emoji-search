@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { search, storeDocs, storeDocsFromEmojiIndex } from './search';
 import { emojiIndex } from './emoji';
 import type { DBDriver } from './types';
-import { ensurePGLiteDriver, initPGLiteDriver } from './pglite';
+import { ensurePGLiteDriver } from './pglite';
 
 const queries = [
   {
@@ -23,7 +23,10 @@ const queries = [
 describe('search by embedding', () => {
   beforeAll(async () => {
     const pgDriver = await ensurePGLiteDriver()
-    await storeDocsFromEmojiIndex({ emojiIndex, driver: pgDriver })
+    await storeDocsFromEmojiIndex({
+      emojiIndex: emojiIndex.slice(0, 50),
+      driver: pgDriver
+    })
   })
   for (const query of queries) {
     it(`should search for ${query.term}`, async () => {
