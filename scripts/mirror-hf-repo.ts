@@ -38,7 +38,7 @@ const MAX_PARALLEL = 4
  * Defaults revision to `main`.
  */
 function parseArgs(): MirrorOptions {
-  const [, , repoArg, revArg, ...rest] = argv
+  const [, , repoArg, revArg] = argv
   if (!repoArg) {
     console.error('Usage: bun scripts/mirror-hf-repo.ts <repo> [revision]')
     process.exit(1)
@@ -157,31 +157,71 @@ async function mirrorRepo(opts: MirrorOptions) {
   console.log('🧮 Files   | ✅ Found', files.length, 'files')
 
   console.log('☁️ Upload  | ▶️  Uploading files to R2 bucket', env.R2_BUCKET)
-  let inFlight = 0
-  const queue: Promise<void>[] = []
+  const startTs = Date.now()
+  let completed = 0
+  let failed = 0
+  const inflight = new Set<Promise<void>>()
+  const inflightKeys = new Set<string>()
 
-  const enqueue = async (fn: () => Promise<void>) => {
-    while (inFlight >= MAX_PARALLEL) {
-      await Promise.race(queue)
+  const fmtBytes = (n: number) => {
+    const units = ['B','KB','MB','GB','TB']
+    let i = 0; let v = n
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++ }
+    return `${v.toFixed(1)} ${units[i]}`
+  }
+  const fmtMs = (ms: number) => `${(ms/1000).toFixed(1)}s`
+
+  const heartbeat = setInterval(() => {
+    console.log(
+      '⏳ Heartbeat| in-flight:', inflight.size,
+      '| done:', completed, '/', files.length,
+      '| failed:', failed,
+      '| elapsed:', fmtMs(Date.now() - startTs)
+    )
+    if (inflightKeys.size) {
+      const sample = Array.from(inflightKeys).slice(0, 3)
+      console.log('   ↪︎ Working on:', sample.join(', '), inflightKeys.size > 3 ? `…(+${inflightKeys.size-3})` : '')
     }
-    const p = fn().finally(() => {
-      inFlight--
-    })
-    inFlight++
-    queue.push(p)
+  }, 10_000)
+
+  const runWithLimit = async (task: () => Promise<void>, key: string) => {
+    while (inflight.size >= MAX_PARALLEL) {
+      await Promise.race(inflight)
+    }
+    const p = task()
+      .catch((e) => {
+        failed++
+        console.warn('❌ Failed   |', key, e)
+      })
+      .finally(() => {
+        inflight.delete(p)
+        inflightKeys.delete(key)
+      })
+    inflight.add(p)
+    inflightKeys.add(key)
   }
 
   for (const abs of files) {
     const key = toS3Key(model, opts.revision, destDir, abs)
+    const st = await fs.stat(abs)
 
-    await enqueue(async () => {
+    await runWithLimit(async () => {
+      const started = Date.now()
+      console.log('🚚 Start   |', key, `(${fmtBytes(st.size)})`)
       const data = await fs.readFile(abs)
       await upsertObject({ key, body: data })
-      console.log('⬆️  Uploaded |', key)
-    })
+      completed++
+      const dt = Date.now() - started
+      const mbps = st.size > 0 ? (st.size / 1024 / 1024) / (dt / 1000) : 0
+      console.log('✅ Done    |', key, `in ${fmtMs(dt)} @ ${mbps.toFixed(2)} MB/s`)
+    }, key)
   }
 
-  await Promise.allSettled(queue)
+  // Wait for remaining tasks
+  if (inflight.size) {
+    await Promise.allSettled(Array.from(inflight))
+  }
+  clearInterval(heartbeat)
 
   console.log('✅ Done     | Mirror complete:', {
     model,
