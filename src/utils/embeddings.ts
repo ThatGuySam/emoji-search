@@ -1,8 +1,5 @@
-export type EmbeddingRow = {
-    content: string
-    embedding: number[]
-}
-  
+import type { EmbeddingRow } from "./types"
+
 /**
  * Quantize normalized float32 vectors to
  * int8 with a per-vector scale and pack

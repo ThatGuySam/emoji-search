@@ -1,5 +1,10 @@
 import type { PGlite } from "@electric-sql/pglite";
 
+export interface EmbeddingRow {
+    content: string
+    embedding: number[]
+}
+
 export interface EmojiRow {
     /** identifier */
     id: string
