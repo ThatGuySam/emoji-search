@@ -127,12 +127,12 @@ async function main() {
   await mojiDb.initSchema()
 
   console.log('🚣 Inserting embeddings...')
-  const embeds = await insertEmbeddings(
-    mojiDb.api, rows
+  const embeds = await mojiDb.insertEmbeddings(
+    rows
   )
 
   console.log('🚣 Dumping DB to memory...')
-  const tarBlob = await mojiDb.api.dumpDataDir('none')
+  const tarBlob = await mojiDb.getDump()
   const tarBuf = Buffer.from(
     await tarBlob.arrayBuffer()
   )

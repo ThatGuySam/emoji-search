@@ -101,6 +101,10 @@ export async function searchEmbeddings(
     return res.rows
 }
 
+async function getDump (db: PGlite) {
+    return await db.dumpDataDir('none')
+}
+
 function defaultOptions({ loadDataDir }: PGliteOptions = {}): PGliteOptions {
     return {
         loadDataDir,
@@ -129,6 +133,7 @@ export async function initPGLiteDriver (options: PGliteOptions = {}): Promise<DB
                 matchThreshold?: number, 
                 limit?: number
             ) => searchEmbeddings(api, text, matchThreshold, limit),
+            getDump: () => getDump(api),
             api
         }
     } catch (e) {

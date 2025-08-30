@@ -20,6 +20,7 @@ export interface DBDriver {
     initSchema: () => Promise<void>
     insertEmbeddings: (rows: EmojiRow[]) => Promise<EmbeddingRow[]>
     searchEmbeddings: (text: string, matchThreshold?: number, limit?: number) => Promise<EmbeddingRow[]>
+    getDump: () => Promise<File | Blob>
 
     /* Internal DB API */
     api: PGlite
