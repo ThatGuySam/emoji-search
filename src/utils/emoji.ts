@@ -1,16 +1,6 @@
 // https://github.com/muan/emojilib?tab=readme-ov-file
 import Emojilib from 'emojilib'
-
-interface EmojiRow {
-    /** identifier */
-    id: string
-    /** emoji glyph */
-    emoji: string
-    /** short name */
-    // name: string
-    /** keywords */
-    // keywords: string[]
-}
+import type { EmojiRow } from './types'
 
 /**
  * Build emoji -> keywords map from
