@@ -36,6 +36,7 @@
   "devDependencies": {
     "concurrently": "^9.2.0",
     "vitest": "^3.2.4",
-    "wrangler": "^4.30.0"
+    "wrangler": "^4.30.0",
+    "zx": "^8.8.1"
   }
 }
