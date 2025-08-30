@@ -42,6 +42,7 @@ import { packEmbeddingsBinary } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
 import type { EmbeddingRow, EmojiRow } from '../src/utils/types'
+import { getEncoder } from '../src/utils/hf'
 
 const [
   // Whether to do a faster test run with less data
@@ -130,23 +131,6 @@ async function initSchema(db: PGlite) {
     on embeddings
       using hnsw (embedding vector_ip_ops);
   `)
-}
-
-/**
- * Create the encoder pipeline.
- */
-async function getEncoder() {
-  // mirror browser worker env
-  env.allowRemoteModels = true
-  env.remoteHost = MODELS_HOST
-  env.remotePathTemplate =
-    MODELS_PATH_TEMPLATE
-  const enc = await pipeline(
-    'feature-extraction',
-    SUPA_GTE_SMALL,
-    { dtype: DATA_TYPE, device: 'cpu' }
-  )
-  return enc
 }
 
 /**
