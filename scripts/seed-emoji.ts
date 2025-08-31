@@ -3,7 +3,6 @@
  *
  * Run:
  *   $ bun scripts/seed-emoji.ts
- *   # or: npx tsx scripts/seed-emoji.ts
  *
  * Outputs:
  *   dist/emoji.tar
