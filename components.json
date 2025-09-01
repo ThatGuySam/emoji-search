@@ -3,6 +3,7 @@
   "style": "new-york",
   "rsc": false,
   "tsx": true,
+  "framework": "astro",
   "tailwind": {
     "config": "",
     "css": "src/styles/global.css",
