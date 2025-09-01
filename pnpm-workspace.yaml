@@ -1,3 +1,6 @@
+packages:
+  - .
+
 onlyBuiltDependencies:
   - '@mongodb-js/zstd'
   - onnxruntime-node
