@@ -25,6 +25,7 @@
     "@huggingface/transformers": "^3.7.2",
     "@sindresorhus/is": "^7.0.2",
     "@t3-oss/env-core": "^0.13.8",
+    "@tailwindcss/vite": "^4.1.12",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "astro": "^5.13.0",
@@ -33,6 +34,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "std-env": "^3.9.0",
+    "tailwindcss": "^4.1.12",
     "zod": "^4.0.17"
   },
   "devDependencies": {
