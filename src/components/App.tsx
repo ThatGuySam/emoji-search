@@ -88,7 +88,7 @@ export default function App() {
   const results = result ?? [];
 
   return (
-    <div className="min-h-dvh grid grid-rows-[auto,1fr] ">
+    <div className="min-h-dvh max-w-xl grid grid-rows-[auto,1fr] mx-auto p-4">
       <header
         className="sticky top-0 z-10 border-b backdrop-blur
         bg-background/80 supports-[backdrop-filter]:bg-background/60
