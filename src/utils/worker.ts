@@ -1,6 +1,11 @@
 import type { FeatureExtractionPipeline } from '@huggingface/transformers'
 import { env, pipeline } from '@huggingface/transformers'
-import { DATA_TYPE, MODELS_HOST, MODELS_PATH_TEMPLATE, DEFAULT_MODEL } from '../constants'
+import {
+  MODELS_HOST,
+  MODELS_PATH_TEMPLATE,
+  DEFAULT_MODEL,
+} from '../constants'
+import { defaultPipelineOptions, deviceType } from './hf'
 
 /**
  * Transformers.js V3 Env options
@@ -31,13 +36,9 @@ class PipelineSingleton {
       const created = await pipeline(
         this.task,
         this.model,
-        {
+        defaultPipelineOptions({
           progress_callback,
-          dtype: DATA_TYPE,
-          device: ('gpu' in navigator)
-            ? 'webgpu'
-            : 'wasm',
-        },
+        })
       )
       // Narrow the giant union type to
       // the specific feature-extraction
