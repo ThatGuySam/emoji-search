@@ -94,7 +94,7 @@ export default function App() {
         bg-background/80 supports-[backdrop-filter]:bg-background/60
         px-3 pt-[max(8px,env(safe-area-inset-top))] pb-2"
       >
-        <label className="grid grid-cols-[1fr,auto] gap-2 items-center">
+        <label className="flex items-center gap-2 whitespace-nowrap">
           <Input
             placeholder="Search emojis by meaning… try shout, attach, celebrate"
             aria-label="Search emojis by meaning"
