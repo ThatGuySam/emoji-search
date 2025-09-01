@@ -1,11 +1,35 @@
+import type { DeviceType, PretrainedOptions } from '@huggingface/transformers'
 import { env, pipeline } from
   '@huggingface/transformers'
-import { DATA_TYPE, DEFAULT_DIMENSIONS, DEFAULT_MODEL, MODELS_HOST, MODELS_PATH_TEMPLATE } from '../constants'
+import { isNode } from 'std-env'
 
-function deviceType() {
-    return 'gpu' in navigator
-        ? 'webgpu'
-        : 'cpu'
+import { DATA_TYPE, DEFAULT_DIMENSIONS, DEFAULT_MODEL, MODEL_REVISION, MODELS_HOST, MODELS_PATH_TEMPLATE } from '../constants'
+
+export function deviceType(): DeviceType {
+  // Default to cpu for node
+  if (isNode) {
+    return 'cpu'
+  }
+
+  const hasGpu = 'gpu' in navigator
+  const isGPUType = ['fp32','fp16','q4f16'].includes(DATA_TYPE)
+
+  if (isGPUType && hasGpu) {
+    return 'webgpu'
+  }
+
+  return 'wasm'
+}
+
+type PipelineOptions = Parameters<typeof pipeline>[2]
+
+export function defaultPipelineOptions(extra: Partial<PipelineOptions> = {}): PipelineOptions {
+  return {
+    dtype: DATA_TYPE,
+    revision: MODEL_REVISION,
+    device: deviceType(),
+    ...extra,
+  }
 }
 
 /**
@@ -20,10 +44,7 @@ export async function getEncoder() {
     const enc = await pipeline(
         'feature-extraction',
         DEFAULT_MODEL,
-        {
-            dtype: DATA_TYPE,
-            device: deviceType()
-        }
+        defaultPipelineOptions()
     )
     return enc
 }
