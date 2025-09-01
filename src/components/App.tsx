@@ -88,7 +88,7 @@ export default function App() {
   const results = result ?? [];
 
   return (
-    <div className="min-h-dvh max-w-xl grid grid-rows-[auto,1fr] mx-auto p-4">
+    <div className="min-h-dvh max-w-xl grid grid-rows-[auto_minmax(0,1fr)] mx-auto p-4">
       <header
         className="sticky top-0 z-10 border-b backdrop-blur
         bg-background/80 supports-[backdrop-filter]:bg-background/60
@@ -146,7 +146,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+      <main className="min-h-0 overflow-y-auto p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
         <div className="text-sm font-medium text-muted-foreground mb-2">
           Results
         </div>
