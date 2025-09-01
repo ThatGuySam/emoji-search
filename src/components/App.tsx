@@ -19,6 +19,9 @@ export default function App() {
   const [result, setResult] = useState<string[] | null>(null);
   const [ready, setReady] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
+  // Track if the user has started a query so we can hide
+  // initial model loading until it's actually needed.
+  const [hasQueried, setHasQueried] = useState(false);
   const [spacerHeight, setSpacerHeight] = useState(0);
   const [sheet, setSheet] = useState<{
     open: boolean;
@@ -33,11 +36,20 @@ export default function App() {
 
   const db = useRef<PGlite | null>(null);
   const headerRef = useRef<HTMLHeadingElement | null>(null);
+  const noCache = (() => {
+    try {
+      const usp = new URLSearchParams(location.search);
+      return usp.has("no_cache");
+    } catch {
+      return false;
+    }
+  })();
   useEffect(() => {
     const setup = async () => {
       initailizing.current = true;
       db.current = await loadPrebuiltDb({
         binUrl: R2_TAR_URL,
+        noCache,
       });
       let count = await countRows(db.current, "embeddings");
       if (count === 0) {
@@ -51,7 +63,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!worker.current) worker.current = new OptimusWorker();
+    if (!worker.current) {
+      worker.current = new OptimusWorker();
+      // Kick off model download immediately on load.
+      // We keep it invisible until the user types.
+      worker.current.postMessage({ type: "preload", noCache });
+    }
     const onMessageReceived = async (e: MessageEvent) => {
       switch (e.data.status) {
         case "initiate":
@@ -76,7 +93,8 @@ export default function App() {
   }, []);
 
   const classify = useCallback((text: string) => {
-    if (worker.current) worker.current.postMessage({ text });
+    setHasQueried(true);
+    if (worker.current) worker.current.postMessage({ text, noCache });
   }, []);
 
   const onCopy = (char: string, name: string) => {
@@ -153,6 +171,15 @@ export default function App() {
           >
             ✕
           </Button>
+          {hasQueried && ready === false && (
+            <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+              <span
+                aria-hidden="true"
+                className="inline-block h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin"
+              />
+              <span>Searching…</span>
+            </span>
+          )}
         </label>
         <div className="mt-2 flex flex-wrap gap-2" aria-live="polite">
           {(!query ? [
@@ -223,7 +250,7 @@ export default function App() {
             );
           })}
         </div>
-        {ready !== null && (
+        {hasQueried && ready !== null && (
           <div className="sr-only" aria-live="polite">
             {!ready || !result ? "Loading..." : "Done"}
           </div>

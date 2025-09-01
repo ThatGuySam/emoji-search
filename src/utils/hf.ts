@@ -51,9 +51,21 @@ export async function getEncoder() {
     env.remoteHost = MODELS_HOST
     env.remotePathTemplate =
       MODELS_PATH_TEMPLATE
+    // Support cache busting via global location
+    const noCache = (() => {
+      try {
+        const usp = new URLSearchParams(location.search)
+        return usp.has('no_cache')
+      } catch {
+        return false
+      }
+    })()
+    const modelId = noCache
+      ? `${DEFAULT_MODEL}?no_cache=${Date.now()}`
+      : DEFAULT_MODEL
     const enc = await pipeline(
         'feature-extraction',
-        DEFAULT_MODEL,
+        modelId,
         defaultPipelineOptions()
     )
     return enc

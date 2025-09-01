@@ -52,10 +52,11 @@ export async function getDB( options: {
  * then fall back to raw body when needed.
  */
 export async function loadPrebuiltDb(
-  options: { binUrl: string },
+  options: { binUrl: string; noCache?: boolean },
 ) {
   const startTime = performance.now()
   const { binUrl } = options
+  const noCache = options.noCache === true
   const isUncompressed = binUrl.endsWith('.bin')
   const isZstd = binUrl.endsWith('.bin.zst')
   const isGzip = binUrl.endsWith('.bin.gz')
@@ -66,9 +67,11 @@ export async function loadPrebuiltDb(
     throw new Error('DB already loaded, cannot load into existing instance')
   }
 
-  const resp = await fetch(binUrl, {
-    cache: 'force-cache',
-    // cache: 'no-store',
+  const url = noCache
+    ? `${binUrl}${binUrl.includes('?') ? '&' : '?'}no_cache=${Date.now()}`
+    : binUrl
+  const resp = await fetch(url, {
+    cache: noCache ? 'no-store' : 'force-cache',
   })
   if (!resp.ok) {
     throw new Error('failed to fetch db')
@@ -148,14 +151,19 @@ async function seedDbFromEmbBin(
   db: PGlite,
   options: {
     binUrl: string
+    noCache?: boolean
     batchSize?: number
   },
 ) {
   const { binUrl } = options
+  const noCache = options.noCache === true
   const batchSize = options.batchSize ?? 256
 
-  const binRes = await fetch(binUrl, {
-    cache: 'force-cache',
+  const bustUrl = noCache
+    ? `${binUrl}${binUrl.includes('?') ? '&' : '?'}no_cache=${Date.now()}`
+    : binUrl
+  const binRes = await fetch(bustUrl, {
+    cache: noCache ? 'no-store' : 'force-cache',
   })
   if (!binRes.ok) {
     throw new Error('failed to fetch bin')
@@ -215,9 +223,10 @@ async function seedDbFromEmbBin(
   return rows.length
 }
 
-export async function loadDBFromEmbedBin(options: { binUrl: string }) {
+export async function loadDBFromEmbedBin(options: { binUrl: string; noCache?: boolean }) {
   const startTime = performance.now()
   const { binUrl } = options
+  const noCache = options.noCache === true
   const mojiDb = await getDB()
 
   console.log('🏁 Initializing schema')
@@ -227,7 +236,8 @@ export async function loadDBFromEmbedBin(options: { binUrl: string }) {
   console.log('🌱 Seeding embeddings')
   // Seed with binary
   await seedDbFromEmbBin(mojiDb, {
-    binUrl
+    binUrl,
+    noCache,
   })
 
   const endTime = performance.now()

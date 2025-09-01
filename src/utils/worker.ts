@@ -31,11 +31,14 @@ class PipelineSingleton {
 
   static async getInstance(
     progress_callback?: (data: unknown) => void,
+    noCache?: boolean,
   ): Promise<FeatureExtractionPipeline> {
     if (this.instance === null) {
       const created = await pipeline(
         this.task,
-        this.model,
+        noCache
+          ? `${this.model}?no_cache=${Date.now()}`
+          : this.model,
         defaultPipelineOptions({
           progress_callback,
         })
@@ -52,16 +55,27 @@ class PipelineSingleton {
 
 // Listen for messages from the main thread
 self.addEventListener('message', async (event) => {
+  const data = event.data || {}
+
+  // Preload request: initialize the pipeline but do not run inference.
+  if (data.type === 'preload') {
+    await PipelineSingleton.getInstance((x: unknown) => {
+      // Forward model loading progress events to the main thread
+      self.postMessage(x)
+    }, data.noCache === true)
+    return
+  }
+
   // Retrieve the classification pipeline. When called for the first time,
   // this will load the pipeline and save it for future use.
   let classifier = await PipelineSingleton.getInstance((x: unknown) => {
     // We also add a progress callback to the pipeline so that we can
     // track model loading.
     self.postMessage(x)
-  })
+  }, data.noCache === true)
 
   // Actually perform the classification
-  let output = await classifier(event.data.text, {
+  let output = await classifier(data.text, {
     pooling: 'mean',
     normalize: true,
   })
