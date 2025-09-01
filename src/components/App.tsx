@@ -19,6 +19,7 @@ export default function App() {
   const [result, setResult] = useState<string[] | null>(null);
   const [ready, setReady] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
+  const [spacerHeight, setSpacerHeight] = useState(0);
   const [sheet, setSheet] = useState<{
     open: boolean;
     char: string;
@@ -31,6 +32,7 @@ export default function App() {
   const worker = useRef<Worker | null>(null);
 
   const db = useRef<PGlite | null>(null);
+  const headerRef = useRef<HTMLHeadingElement | null>(null);
   useEffect(() => {
     const setup = async () => {
       initailizing.current = true;
@@ -86,13 +88,47 @@ export default function App() {
   };
 
   const results = result ?? [];
+  const isCentered = query === "" && results.length === 0;
+
+  useEffect(() => {
+    /**
+     * Measure header and compute spacer so the
+     * search field appears vertically centered
+     * on first load. Collapses once typing.
+     */
+    const updateSpacer = () => {
+      if (!headerRef.current) return;
+      if (!isCentered) {
+        setSpacerHeight(0);
+        return;
+      }
+      const headerBox =
+        headerRef.current.getBoundingClientRect();
+      const viewport = window.innerHeight;
+      const target = Math.max(
+        0,
+        viewport / 2 - headerBox.height / 2 - 12,
+      );
+      setSpacerHeight(Math.floor(target));
+    };
+    updateSpacer();
+    window.addEventListener("resize", updateSpacer);
+    return () =>
+      window.removeEventListener("resize", updateSpacer);
+  }, [isCentered]);
 
   return (
-    <div className="min-h-dvh max-w-xl grid grid-rows-[auto_minmax(0,1fr)] mx-auto p-4">
+    <div className="min-h-dvh max-w-xl grid grid-rows-[auto_auto_minmax(0,1fr)] mx-auto p-4">
+      <div
+        aria-hidden
+        className="transition-[height] duration-300"
+        style={{ height: `${spacerHeight}px` }}
+      />
       <header
         className="sticky top-0 z-10 border-b backdrop-blur
         bg-background/80 supports-[backdrop-filter]:bg-background/60
         px-3 pt-[max(8px,env(safe-area-inset-top))] pb-2"
+        ref={headerRef}
       >
         <label className="flex items-center gap-2 whitespace-nowrap">
           <Input
