@@ -6,6 +6,7 @@ import {
   decodeEmbeddingsBinary,
 } from './embeddings'
 import { emojiIndex } from './emoji'
+import { DEFAULT_DIMENSIONS } from '../constants'
 
 export interface EmbeddingEntry {
     id: number
@@ -272,7 +273,7 @@ export const search = async (
     // Validate input embedding to ensure
     // correct vector dimensionality and type
     if (!Array.isArray(embedding) ||
-        embedding.length !== 384 ||
+        embedding.length !== DEFAULT_DIMENSIONS ||
         !embedding.every(n => typeof n === 'number')) {
       throw new TypeError(
         'embedding must be number[] len 384'
