@@ -21,7 +21,7 @@
     "@aws-sdk/client-s3": "^3.864.0",
     "@bokuweb/zstd-wasm": "^0.0.27",
     "@electric-sql/pglite": "^0.3.7",
-    "@huggingface/transformers": "^3.7.1",
+    "@huggingface/transformers": "^3.7.2",
     "@sindresorhus/is": "^7.0.2",
     "@t3-oss/env-core": "^0.13.8",
     "@types/react": "^19.1.10",
