@@ -13,6 +13,11 @@ export function Input(props: InputProps) {
   const { className, ...rest } = props
   return (
     <UI
+      type="search"
+      enterKeyHint="search"
+      autoCapitalize="off"
+      autoCorrect="on"
+      spellCheck
       className={cn('rounded-2xl h-11 text-base', className)}
       {...rest}
     />
