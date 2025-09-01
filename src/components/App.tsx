@@ -176,7 +176,11 @@ export default function App() {
                   setSheet({ open: true, char, name });
                 }}
               >
-                <span className="text-[clamp(22px,4.6vh,32px)] leading-none">
+                <span
+                  role="img"
+                  aria-label={name}
+                  className="text-[clamp(22px,4.6vh,32px)] leading-none"
+                >
                   {char}
                 </span>
               </button>
