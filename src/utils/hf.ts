@@ -1,4 +1,4 @@
-import type { DeviceType, PretrainedOptions } from '@huggingface/transformers'
+import type { DeviceType } from '@huggingface/transformers'
 import { env, pipeline } from
   '@huggingface/transformers'
 import { isNode } from 'std-env'
@@ -6,15 +6,24 @@ import { isNode } from 'std-env'
 import { DATA_TYPE, DEFAULT_DIMENSIONS, DEFAULT_MODEL, MODEL_REVISION, MODELS_HOST, MODELS_PATH_TEMPLATE } from '../constants'
 
 export function deviceType(): DeviceType {
+  // Prefer WebGPU when available. iOS 17+/Safari 17+ exposes navigator.gpu.
+  // Using WebGPU dramatically reduces memory pressure vs WASM on iOS.
+  const hasWebGPU = typeof globalThis.navigator !== 'undefined' && 'gpu' in navigator
+  // Does the model type support GPU or is it a cpu model?
+  const isGPUModel = ['fp32','fp16','q4f16'].includes(DATA_TYPE)
+
+  // console.log({
+  //   DATA_TYPE,
+  //   hasWebGPU,
+  //   isGPUModel,
+  // })
+
   // Default to cpu for node
   if (isNode) {
     return 'cpu'
   }
 
-  const hasGpu = 'gpu' in navigator
-  const isGPUType = ['fp32','fp16','q4f16'].includes(DATA_TYPE)
-
-  if (isGPUType && hasGpu) {
+  if (hasWebGPU && isGPUModel) {
     return 'webgpu'
   }
 
@@ -24,10 +33,11 @@ export function deviceType(): DeviceType {
 type PipelineOptions = Parameters<typeof pipeline>[2]
 
 export function defaultPipelineOptions(extra: Partial<PipelineOptions> = {}): PipelineOptions {
+  const device = deviceType()
   return {
     dtype: DATA_TYPE,
     revision: MODEL_REVISION,
-    device: deviceType(),
+    device,
     ...extra,
   }
 }
