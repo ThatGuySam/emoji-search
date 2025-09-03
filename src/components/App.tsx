@@ -30,7 +30,7 @@ export default function App() {
   }>({ open: false, char: "", name: "" });
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
-  const initailizing = useRef(false);
+  const initializing = useRef(false);
 
   const worker = useRef<Worker | null>(null);
 
@@ -46,7 +46,7 @@ export default function App() {
   })();
   useEffect(() => {
     const setup = async () => {
-      initailizing.current = true;
+      initializing.current = true;
       db.current = await loadPrebuiltDb({
         binUrl: R2_TAR_URL,
         noCache,
@@ -59,7 +59,7 @@ export default function App() {
         .query<EmbeddingEntry>("SELECT content FROM embeddings");
       setContent(items.rows.map((x) => x.content));
     };
-    if (!db.current && !initailizing.current) setup();
+    if (!db.current && !initializing.current) setup();
   }, []);
 
   useEffect(() => {
