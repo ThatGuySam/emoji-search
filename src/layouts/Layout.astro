@@ -1,5 +1,13 @@
 ---
 import '../styles/global.css';
+
+const title = 'Better Emoji Search';
+const description =
+  'Find the perfect emoji using your ' +
+  'own words. All ranking and ' +
+  'inference run fully client‑side ' +
+  '(no servers, no telemetry).';
+const siteUrl = 'https://emoji.samcarlton.com';
 ---
 <!doctype html>
 <html lang="en">
@@ -8,7 +16,21 @@ import '../styles/global.css';
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>{title}</title>
+
+		<meta name="description" content={description} />
+		<meta name="application-name" content={title} />
+		<meta name="apple-mobile-web-app-title" content={title} />
+
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content={title} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={siteUrl} />
+
+		<meta name="twitter:card" content="summary" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
 	</head>
 	<body class="dark">
 		<slot />
