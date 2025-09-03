@@ -181,3 +181,5 @@ pnpm test --run
   `https://github.com/huggingface/transformers.js-examples/tree/main/pglite-semantic-search`
 * In‑browser semantic search article:
   `https://supabase.com/blog/in-browser-semantic-search-pglite`
+* Uses Signal's Emoji Search Index for keywords
+  `https://github.com/signalapp/emoji-search-index`
