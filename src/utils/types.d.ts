@@ -1,6 +1,8 @@
 import type { PGlite } from "@electric-sql/pglite";
 
 export interface EmbeddingRow {
+    id?: number
+    identifier: string
     content: string
     embedding: number[]
 }
@@ -19,6 +21,9 @@ export interface EmojiRow {
 export interface DBDriver {
     initSchema: () => Promise<void>
     insertEmbeddings: (rows: EmojiRow[]) => Promise<EmbeddingRow[]>
+    insertDocuments: (
+      docs: { identifier: string; content: string }[]
+    ) => Promise<EmbeddingRow[]>
     searchEmbeddings: (text: string, matchThreshold?: number, limit?: number) => Promise<EmbeddingRow[]>
     getDump: () => Promise<File | Blob>
 

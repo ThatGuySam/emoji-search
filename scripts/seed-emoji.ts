@@ -27,6 +27,7 @@ import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
 import { initPGLiteDriver } from '../src/utils/pglite'
 import assert from 'node:assert';
+import type { EmojiRow } from '@/utils/types';
 
 /**
  * Flags
@@ -101,10 +102,126 @@ async function main() {
   console.log('🚣 Building emoji DB...')
   const mojiDb = await initPGLiteDriver()
 
+  // Optionally enrich docs from
+  // src/artifacts/signal-keywords.json
+  type SignalRow = {
+    emoji: string
+    shortName: string
+    tags: string[]
+  }
+
+  /**
+   * Load optional Signal keywords map.
+   */
+  async function tryLoadSignal(): Promise<
+    Map<string, SignalRow> | null
+  > {
+    try {
+      const p = './src/artifacts/signal-keywords.json'
+      const buf = await fs.readFile(p)
+      const list = (
+        JSON.parse(
+          buf.toString('utf8')
+        ) as SignalRow[]
+      )
+      const map = new Map<string, SignalRow>()
+      for (const r of list) {
+        if (r && r.emoji) map.set(r.emoji, r)
+      }
+      return map
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Build a unique, trimmed word list.
+   */
+  function toUniqueWords(list: unknown[]): string[] {
+    const seen = new Set<string>()
+    const out: string[] = []
+    for (const t of list || []) {
+      const w = String(t || '').trim()
+      if (w && !seen.has(w)) {
+        seen.add(w)
+        out.push(w)
+      }
+    }
+    return out
+  }
+
+  /**
+   * Ensure a short name is present as last.
+   */
+  function ensureShortLast(
+    words: string[],
+    shortName: string,
+  ): string[] {
+    const short = (shortName || '').trim()
+    if (!short) return words
+    const out = words.filter(w => w !== short)
+    out.push(short)
+    return out
+  }
+
+  /**
+   * Compose the document content string.
+   */
+  function composeContent(
+    tags: string[],
+    shortName: string,
+    id: string,
+  ): string {
+    let words = Array.from(new Set(tags))
+    words = ensureShortLast(words, shortName)
+    if (words.length === 0) words = [shortName || id]
+    return words.join(', ') + `, ${id}`
+  }
+
+  /**
+   * Build a single doc for an emoji row.
+   */
+  function buildDoc(
+    row: EmojiRow,
+    map: Map<string, SignalRow> | null,
+  ): { identifier: string; content: string } {
+    if (!map) {
+      return { identifier: row.emoji, content: `${row.id}` }
+    }
+    const mapEntry = map.get(row.emoji)
+
+
+    // Fallback to id if no map entry
+    if (!mapEntry) {
+      return { identifier: row.emoji, content: row.id }
+    }
+
+    const { tags, shortName } = mapEntry
+
+
+    const content = composeContent(
+      tags,
+      shortName,
+      row.id,
+    )
+
+    return { identifier: row.emoji, content }
+  }
+
+  /**
+   * Build all docs from rows and map.
+   */
+  function buildDocs(
+    list: EmojiRow[],
+    map: Map<string, SignalRow> | null,
+  ) {
+    return list.map(r => buildDoc(r, map))
+  }
+
+  const signalMap = await tryLoadSignal()
   console.log('🚣 Inserting embeddings...')
-  const embeds = await mojiDb.insertEmbeddings(
-    rows
-  )
+  const docs = buildDocs(rows, signalMap)
+  const embeds = await mojiDb.insertDocuments(docs)
 
   console.log('🚣 Dumping DB to memory...')
   const tarBlob = await mojiDb.getDump()
@@ -124,9 +241,9 @@ async function main() {
   )
   const META_JSON =
     `${OUT_DIR}/emoji-meta.json`
-  const meta = rows.map(r => ({
+  const meta = rows.map((r, i) => ({
     id: r.id,
-    content: `${r.emoji} ${r.id}`,
+    content: embeds[i]?.content ?? ''
   }))
   await fs.writeFile(
     META_JSON,
@@ -154,14 +271,14 @@ async function main() {
     0.8,
     10
   )
-  console.log(
-    'Top matches:',
-    top.map((row: { content: string }) =>
-      row.content
-    )
+  console.log('Top matches:')
+  console.table(
+    top.map(row => ({
+      emoji: row.identifier,
+    }))
   )
 
-  assert(top.some(row => row.content.includes('🗣️')), '🗣️ should be in the top matches')
+  assert(top.some(row => row.identifier.includes('🗣️')), '🗣️ should be in the top matches')
 
   const writeZstd = async () => {
     // if (fast) return

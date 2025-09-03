@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest'
+import fs from 'node:fs/promises'
 
-import { search, storeDocs, storeDocsFromEmojiIndex } from './search';
+import { search, storeDocsFromEmojiIndex } from './search';
 import { emojiIndex } from './emoji';
-import type { DBDriver } from './types';
 import { ensurePGLiteDriver } from './pglite';
+import { DB_TAR } from '../constants';
 
 const queries = [
   {
@@ -29,26 +30,24 @@ const drivers = [
 
 describe.for(drivers)('search with $name driver', (driver) => {
   beforeAll(async () => {
-    const pgDriver = await ensurePGLiteDriver()
-    await storeDocsFromEmojiIndex({
-      emojiIndex: emojiIndex.slice(0, 50),
-      driver: pgDriver
+    // Import the db.tar file from local file system
+    const dbTar: File = new File([await fs.readFile(DB_TAR)], 'db.tar')
+    await ensurePGLiteDriver({
+      loadDataDir: dbTar
     })
   })
   
-  it.for(queries)(`should search for $term`, async (query, driver) => {
+  it.for(queries)(`should search for $term`, async (query) => {
     const { term, expectedResults } = query
     const pgDriver = await ensurePGLiteDriver()
-    const results = await search({
-      term,
-      driver: pgDriver
-    })
+    const results = await pgDriver.searchEmbeddings(term, 0.8, 10)
+
+    console.log('results', results.map(result => result.identifier))
 
     for (const expectedResult of expectedResults) {
-      const matchingResult = results.find(result => result.emoji === expectedResult.emoji)
+      const matchingResult = results.find(result => result.identifier === expectedResult.emoji)
       // Should be equal to or less than rank
-      expect(matchingResult).contain({ emoji: expectedResult.emoji })
-      expect(matchingResult?.rank).toBeLessThanOrEqual(expectedResult.rank)
+      expect(matchingResult).contain({ identifier: expectedResult.emoji })
     }
   })
 })

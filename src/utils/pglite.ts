@@ -15,6 +15,10 @@ export async function initSchema(db: PGlite) {
       create table if not exists embeddings (
         id bigint primary key
           generated always as identity,
+        -- Keep the raw emoji glyph/id
+        -- separate from the vectorized
+        -- content for display/use later.
+        identifier text,
         content text not null,
         embedding vector(${DEFAULT_DIMENSIONS})
       );
@@ -38,12 +42,13 @@ export async function insertEmbeddings(
     for (let i = 0; i < rows.length; i +=
          batch) {
       const slice = rows.slice(i, i + batch)
-      const embeds = await Promise.all(
-        slice.map(r => {
-          const content = `${r.emoji} ${r.id}`
+      const embeds: EmbeddingRow[] = await Promise.all(
+        slice.map((row: EmojiRow) => {
+          const content = `${row.emoji} ${row.id}`
           return encodeContent(
             content, enc
           ).then(e => ({
+            identifier: row.emoji,
             content,
             embedding: e,
           }))
@@ -51,18 +56,21 @@ export async function insertEmbeddings(
       )
       await db.transaction(async (tx) => {
         const vals = embeds.map((_, j) =>
-          `($${j*2+1},$${j*2+2})`
+          `($${j*3+1},$${j*3+2},$${j*3+3})`
         ).join(',')
         const params: unknown[] = []
-        for (const e of embeds) {
+        for (let k = 0; k < embeds.length; k++) {
+          const e = embeds[k]
+          const r = slice[k]
           params.push(
+            r.id,
             e.content,
             JSON.stringify(e.embedding)
           )
         }
         await tx.query(
           `insert into embeddings
-           (content, embedding)
+           (identifier, content, embedding)
            values ${vals}`,
           params
         )
@@ -70,6 +78,57 @@ export async function insertEmbeddings(
       all.push(...embeds)
     }
     return all
+}
+
+/**
+ * Insert prebuilt documents where we
+ * already have identifier and content.
+ */
+export async function insertDocuments(
+  db: PGlite,
+  docs: { identifier: string; content: string }[],
+) {
+  const all: EmbeddingRow[] = []
+  const enc = await getEncoder()
+  const batch = 64
+  for (let i = 0; i < docs.length; i += batch) {
+    const slice = docs.slice(i, i + batch)
+    const embeds: EmbeddingRow[] = await Promise.all(
+      slice.map(async (d): Promise<EmbeddingRow> => {
+        const embedding = await encodeContent(
+          d.content, enc
+        )
+        return {
+          identifier: d.identifier,
+          content: d.content,
+          embedding,
+        }
+      })
+    )
+    await db.transaction(async (tx) => {
+      const vals = embeds.map((_, j) =>
+        `($${j*3+1},$${j*3+2},$${j*3+3})`
+      ).join(',')
+      const params: unknown[] = []
+      for (let k = 0; k < embeds.length; k++) {
+        const e = embeds[k]
+        const d = slice[k]
+        params.push(
+          d.identifier,
+          e.content,
+          JSON.stringify(e.embedding)
+        )
+      }
+      await tx.query(
+        `insert into embeddings
+         (identifier, content, embedding)
+         values ${vals}`,
+        params
+      )
+    })
+    all.push(...embeds)
+  }
+  return all
 }
 
 /**
@@ -87,9 +146,16 @@ export async function searchEmbeddings(
 
     const res = await db.query<EmbeddingRow>(
       `
-      select content from embeddings
-      where embedding <#> $1 < $2
-      order by embedding <#> $1
+      select id, identifier, content, embedding
+      from (
+        select distinct on (identifier)
+          id, identifier, content, embedding,
+          (embedding <#> $1) as dist
+        from embeddings
+        where embedding <#> $1 < $2
+        order by identifier, dist
+      ) d
+      order by d.dist
       limit $3;
       `,
       [
@@ -98,6 +164,7 @@ export async function searchEmbeddings(
         Number(limit),
       ]
     )
+
     return res.rows
 }
 
@@ -132,6 +199,7 @@ export async function initPGLiteDriver (options: PGliteOptions = {}): Promise<DB
         return {
             initSchema: () => initSchema(api),
             insertEmbeddings: (rows: EmojiRow[]) => insertEmbeddings(api, rows),
+            insertDocuments: (docs: { identifier: string; content: string }[]) => insertDocuments(api, docs),
             searchEmbeddings: (
                 text: string, 
                 matchThreshold?: number, 

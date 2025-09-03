@@ -38,10 +38,5 @@ interface SearchOptions extends DBDriverOptions {
 }
 
 export function search({ term, driver }: SearchOptions) {
-  return [
-    {
-      emoji: '📣',
-      rank: 1
-    }
-  ]
+  return driver.searchEmbeddings(term)
 }
