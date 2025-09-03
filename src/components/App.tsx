@@ -1,6 +1,5 @@
 import type { PGlite } from "@electric-sql/pglite";
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { EmbeddingEntry } from "../utils/db";
 import { countRows, search, loadPrebuiltDb } from "../utils/db";
 import OptimusWorker from "../utils/worker.ts?worker";
 import { R2_TAR_URL } from "../constants";
@@ -13,6 +12,7 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/Sheet";
+import type { EmbeddingRow } from "@/utils/types";
 
 export default function App() {
   const [content, setContent] = useState<string[]>([]);
@@ -56,7 +56,7 @@ export default function App() {
         count = await countRows(db.current, "embeddings");
       }
       const items = await db.current
-        .query<EmbeddingEntry>("SELECT content FROM embeddings");
+        .query<EmbeddingRow>("SELECT content FROM embeddings");
       setContent(items.rows.map((x) => x.content));
     };
     if (!db.current && !initializing.current) setup();
@@ -83,7 +83,7 @@ export default function App() {
             db.current,
             e.data.embedding,
           );
-          setResult(searchResults.map((x) => x.content));
+          setResult(searchResults.map((x) => x.identifier));
           break;
       }
     };

@@ -7,12 +7,7 @@ import {
 } from './embeddings'
 import { emojiIndex } from './emoji'
 import { DEFAULT_DIMENSIONS } from '../constants'
-
-export interface EmbeddingEntry {
-    id: number
-    content: string
-    embedding: number[]
-}
+import type { EmbeddingRow } from './types'
 
 
 let dbInstance: PGlite | null = null
@@ -290,19 +285,18 @@ export const search = async (
       )
     }
 
-    const res = await db.query<EmbeddingEntry>(
+    const res = await db.query<EmbeddingRow>(
       `
-      select * from embeddings
-  
-      -- The inner product is negative, so we negate match_threshold
-      where embeddings.embedding <#> $1 < $2
-  
-      -- Our embeddings are normalized to length 1, so cosine similarity
-      -- and inner product will produce the same query results.
-      -- Using inner product which can be computed faster.
-      --
-      -- For the different distance functions, see https://github.com/pgvector/pgvector
-      order by embeddings.embedding <#> $1
+      select id, identifier, content, embedding
+      from (
+        select distinct on (identifier)
+          id, identifier, content, embedding,
+          (embedding <#> $1) as dist
+        from embeddings
+        where embedding <#> $1 < $2
+        order by identifier, dist
+      ) d
+      order by d.dist
       limit $3;
       `,
       [JSON.stringify(embedding), -Number(match_threshold), Number(limit)]
