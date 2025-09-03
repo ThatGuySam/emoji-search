@@ -26,6 +26,7 @@ import { packEmbeddingsBinary } from '../src/utils/embeddings'
 import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
 import { initPGLiteDriver } from '../src/utils/pglite'
+import assert from 'node:assert';
 
 /**
  * Flags
@@ -151,7 +152,7 @@ async function main() {
   const top = await mojiDb.searchEmbeddings(
     queryText,
     0.8,
-    5
+    10
   )
   console.log(
     'Top matches:',
@@ -159,6 +160,8 @@ async function main() {
       row.content
     )
   )
+
+  assert(top.some(row => row.content.includes('🗣️')), '🗣️ should be in the top matches')
 
   const writeZstd = async () => {
     // if (fast) return
