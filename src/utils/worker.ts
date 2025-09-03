@@ -15,12 +15,12 @@ import { defaultPipelineOptions, deviceType } from './hf'
 // keep remote, but point to your host (CORS required)
 env.allowRemoteModels = true
 env.remoteHost = MODELS_HOST
-// Working path for https://models.samcarlton.com
+// Working path for https://cdn.fetchmoji.com
 /**
  * {filename} is not a thing in this version of transformers
  */
 env.remotePathTemplate = MODELS_PATH_TEMPLATE
-// env.backends.onnx.wasm.wasmPaths = 'https://models.samcarlton.com/wasm/'
+// env.backends.onnx.wasm.wasmPaths = 'https://cdn.fetchmoji.com/wasm/'
 
 // Use the Singleton pattern to enable lazy construction of the pipeline.
 class PipelineSingleton {
