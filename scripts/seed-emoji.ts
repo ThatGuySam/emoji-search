@@ -3,6 +3,8 @@
  *
  * Run:
  *   $ bun scripts/seed-emoji.ts
+ *   $ bun scripts/seed-emoji.ts --fast
+ *   $ bun scripts/seed-emoji.ts --with-upload
  *
  * Outputs:
  *   dist/emoji.tar
@@ -25,10 +27,15 @@ import { emojiIndex } from '../src/utils/emoji'
 import { upsertObject } from '../src/utils/r2.node'
 import { initPGLiteDriver } from '../src/utils/pglite'
 
-const [
-  // Whether to do a faster test run with less data
-  fast = false
-] = argv.slice(2)
+/**
+ * Flags
+ *  --fast: limit rows for quicker runs
+ *  --with-upload: push artifacts to R2
+ */
+const argumentList = argv.slice(2)
+const argumentSet = new Set(argumentList)
+const withUpload = argumentSet.has('--with-upload')
+const fast = argumentSet.has('--fast')
 
 const FAST_LIMIT = 50
 const useBrotli: boolean = false
@@ -223,13 +230,22 @@ async function main() {
     DB_TAR_ZST,
   ]
 
-  console.log('🚣 Uploading to R2...')
-  await Promise.all(
-    files.map(async (f) => {
-      const key = 'db/' + f.replace(/^\.\//, '')
-      await upsertObject({ key, body: await fs.readFile(f) })
-    })
-  )
+  if (withUpload) {
+    console.log('🚣 Uploading to R2...')
+    await Promise.all(
+      files.map(async (f) => {
+        const key = 'db/' + f.replace(/^\.\//, '')
+        await upsertObject({
+          key,
+          body: await fs.readFile(f)
+        })
+      })
+    )
+  } else {
+    console.log(
+      '🚣 Skipping upload. Use --with-upload.'
+    )
+  }
 
   const report = (await Promise.all(
     files.map(async (f) => [
