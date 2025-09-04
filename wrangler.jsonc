@@ -3,8 +3,16 @@
     "name": "fetchmoji",
     // Update to today's date
     "compatibility_date": "2025-03-25",
+    "main": "src/worker.ts",
     "assets": {
       "directory": "./dist",
+      // Only run the worker for path we actually need it for
+      // so that we keep our static assets fast
+      "run_worker_first": [
+        "/worker-disabled-for-now"
+        // "/**/*.tar*",
+        // "/**/*.bin*"
+      ],
       "not_found_handling": "404-page" // If you have a custom `src/pages/404.astro` page
     }
 }
