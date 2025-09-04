@@ -4,6 +4,7 @@
         "Decomp",
         "dtype",
         "emojilib",
+        "fetchmoji",
         "hnsw",
         "huggingface",
         "mbps",
@@ -13,6 +14,7 @@
         "squircle",
         "Upserts",
         "webgpu",
-        "Xenova"
+        "Xenova",
+        "zstd"
     ]
 }
