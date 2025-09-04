@@ -29,13 +29,13 @@ export default function App() {
     name: string;
   }>({ open: false, char: "", name: "" });
   const [toast, setToast] = useState<string | null>(null);
+
   const toastTimer = useRef<number | null>(null);
   const initializing = useRef(false);
-
   const worker = useRef<Worker | null>(null);
-
   const db = useRef<PGlite | null>(null);
   const headerRef = useRef<HTMLHeadingElement | null>(null);
+  
   const noCache = (() => {
     try {
       const usp = new URLSearchParams(location.search);
