@@ -1,4 +1,4 @@
-# Better Emoji Search
+# FetchMoji
 
 Find the perfect emoji using your own words.
 All ranking and inference run fully client‑side (no servers, no telemetry).

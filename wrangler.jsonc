@@ -1,6 +1,6 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
-    "name": "emoji-search",
+    "name": "fetchmoji",
     // Update to today's date
     "compatibility_date": "2025-03-25",
     "assets": {
