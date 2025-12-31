@@ -36,7 +36,7 @@ export default {
         'Access-Control-Max-Age': '86400',
         'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
       };
-      if (allowed) headers['Access-Control-Allow-Origin'] = origin!;
+      if (allowed) headers['Access-Control-Allow-Origin'] = origin;
       return new Response(null, { status: 204, headers });
     }
 
@@ -44,7 +44,7 @@ export default {
     let res = await env.ASSETS.fetch(request); // returns the static file (cached), if it exists
     if (allowed && isProtectedPath(url.pathname)) {
       res = new Response(res.body, res);                 // clone to mutate headers
-      res.headers.set('Access-Control-Allow-Origin', origin!);
+      res.headers.set('Access-Control-Allow-Origin', origin);
       res.headers.append('Vary', 'Origin');
       // If you need cookies/auth across origins:
       // res.headers.set('Access-Control-Allow-Credentials', 'true');
