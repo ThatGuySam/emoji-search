@@ -1,13 +1,9 @@
-import type { PGlite } from "@electric-sql/pglite";
 import {
   useState,
   useEffect,
   useRef,
-  useCallback,
-  type RefObject,
 } from "react";
 import {
-  countRows,
   search,
   loadPrebuiltDb,
 } from "@/utils/db";
@@ -22,20 +18,17 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/Sheet";
+import {
+  EmojiSearchCore,
+  type EmojiSearchDeps,
+} from "@/hooks/useEmojiSearch";
 /**
  * App
  * Emoji semantic search UI using a worker
  * and an embedded vector database.
  */
 export function App() {
-  const [matchedIds, setMatchedIds] =
-    useState<string[] | null>(null);
-  const [ready, setReady] =
-    useState<boolean | null>(null);
   const [query, setQuery] = useState("");
-  // Track if the user has started a query so we can hide
-  // initial model loading until it's actually needed.
-  const [hasQueried, setHasQueried] = useState(false);
   const [spacerHeight, setSpacerHeight] = useState(0);
   const [sheet, setSheet] = useState<{
     open: boolean;
@@ -55,9 +48,8 @@ export function App() {
       return false;
     }
   })();
-  const { matched, status, classify } =
+  const { matched, isSearching, classify } =
     useEmojiSearch({ noCache });
-  useEffect(() => setReady(status), [status]);
 
   /**
    * Copy the selected emoji and show a toast.
