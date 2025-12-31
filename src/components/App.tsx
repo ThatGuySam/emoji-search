@@ -266,7 +266,7 @@ function SearchHeader(props: {
     onChip,
   } = props;
   const chips = (!query ? [
-    "announce",
+    "shout",
     "attach",
     "copy",
     "celebrate",
