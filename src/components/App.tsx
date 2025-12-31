@@ -202,6 +202,13 @@ function useEmojiSearch(options: { noCache: boolean }) {
   const worker = useRef<Worker | null>(null);
   const database = useRef<PGlite | null>(null);
 
+  // Promise that resolves when DB is ready.
+  // Allows queries to wait instead of failing.
+  const dbReadyPromise = useRef<Promise<PGlite> | null>(null);
+  const dbReadyResolve = useRef<
+    ((db: PGlite) => void) | null
+  >(null);
+
   const [status, setStatus] = useState<boolean | null>(null);
   const [matched, setMatched] =
     useState<string[] | null>(null);
@@ -210,14 +217,26 @@ function useEmojiSearch(options: { noCache: boolean }) {
   useEffect(() => {
     const setup = async () => {
       initializing.current = true;
-      database.current = await loadPrebuiltDb({
+      const db = await loadPrebuiltDb({
         binUrl: R2_TAR_URL,
         noCache,
       });
-      await countRows(database.current, "embeddings");
+      database.current = db;
+      await countRows(db, "embeddings");
+      // Resolve the ready promise so waiting
+      // queries can proceed.
+      if (dbReadyResolve.current) {
+        dbReadyResolve.current(db);
+      }
     };
-    if (!database.current && !initializing.current)
+    if (!database.current && !initializing.current) {
+      // Create promise before starting setup so
+      // early queries can await it.
+      dbReadyPromise.current = new Promise((resolve) => {
+        dbReadyResolve.current = resolve;
+      });
       setup();
+    }
   }, [noCache]);
 
   // Initialize worker and handle messages.
@@ -238,17 +257,25 @@ function useEmojiSearch(options: { noCache: boolean }) {
         case "ready":
           setStatus(true);
           return;
-        case "complete":
-          if (!database.current)
-            throw new Error("DB not ready");
-          {
-            const results = await search(
-              database.current,
-              e.data.embedding,
-            );
-            setMatched(results.map(x => x.identifier));
+        case "complete": {
+          // Wait for DB if not ready yet. This
+          // prevents race condition on iOS Safari
+          // where model finishes before DB loads.
+          let db = database.current;
+          if (!db && dbReadyPromise.current) {
+            db = await dbReadyPromise.current;
           }
+          if (!db) {
+            console.error("DB failed to initialize");
+            return;
+          }
+          const results = await search(
+            db,
+            e.data.embedding,
+          );
+          setMatched(results.map(x => x.identifier));
           return;
+        }
         default:
           // Unknown worker message; ignore to
           // avoid noisy console during dev.
