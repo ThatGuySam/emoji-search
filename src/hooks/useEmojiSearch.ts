@@ -5,6 +5,20 @@
  * and vector database. Handles race conditions
  * where queries arrive before DB is ready.
  *
+ * iOS Safari Memory Considerations:
+ * - No official limit published by Apple
+ * - Practical limit: ~1-1.5GB before crashes
+ * - ArrayBuffer limit: ~2GB in browsers
+ * - WebAssembly limit: 4GB (32-bit addressing)
+ * - iOS terminates tabs aggressively under
+ *   memory pressure
+ *
+ * Mitigations implemented:
+ * - Worker termination on cleanup (frees all
+ *   worker memory including ONNX sessions)
+ * - Debounced search (prevents memory buildup
+ *   from rapid concurrent inference requests)
+ *
  * Written by AI (Claude Opus 4.5)
  */
 
@@ -43,8 +57,18 @@ export interface EmojiSearchDeps {
       event: string,
       handler: (e: { data: unknown }) => void
     ) => void
+    // Optional: terminate worker to free memory
+    // Critical for iOS Safari memory limits
+    terminate?: () => void
   }
 }
+
+/**
+ * Debounce delay in milliseconds.
+ * Prevents rapid inference requests that can
+ * cause memory pressure on iOS Safari.
+ */
+const DEBOUNCE_DELAY_MS = 150
 
 /**
  * Message from the ML worker.
@@ -75,6 +99,11 @@ export class EmojiSearchCore {
     () => infer W ? W : never
   private deps: EmojiSearchDeps
   private onStateChange: () => void
+  // Debounce timer to limit rapid searches
+  // and reduce memory pressure on mobile
+  private debounceTimer: ReturnType<
+    typeof setTimeout
+  > | null = null
 
   constructor(options: {
     deps: EmojiSearchDeps
@@ -176,9 +205,17 @@ export class EmojiSearchCore {
   }
 
   /**
-   * Start a search query.
+   * Start a search query with debouncing.
+   * Debounce prevents rapid concurrent requests
+   * that can cause memory pressure on iOS.
    */
   classify(text: string, options: { noCache?: boolean } = {}) {
+    // Clear any pending debounced search
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = null
+    }
+
     if (!text.trim()) {
       this.matched = null
       this.isSearching = false
@@ -186,22 +223,46 @@ export class EmojiSearchCore {
       return
     }
 
+    // Show searching state immediately for UX
     this.isSearching = true
     this.onStateChange()
-    this.worker.postMessage({
-      text,
-      noCache: options.noCache,
-    })
+
+    // Debounce the actual worker call to limit
+    // concurrent inference requests
+    this.debounceTimer = setTimeout(() => {
+      this.debounceTimer = null
+      this.worker.postMessage({
+        text,
+        noCache: options.noCache,
+      })
+    }, DEBOUNCE_DELAY_MS)
   }
 
   /**
    * Cleanup resources.
+   * Terminates worker to free ONNX session memory.
+   * Critical for iOS Safari which crashes at
+   * ~1-1.5GB memory usage.
    */
   destroy() {
+    // Clear pending debounced search
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = null
+    }
+
     this.worker.removeEventListener(
       'message',
       this.handleWorkerMessage
     )
+
+    // Terminate worker to free all memory
+    // including ONNX sessions and WASM heap.
+    // This is more thorough than dispose() as
+    // it completely destroys the worker context.
+    if (this.worker.terminate) {
+      this.worker.terminate()
+    }
   }
 
   /**

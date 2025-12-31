@@ -128,21 +128,17 @@ export function App() {
         <SearchHeader
           query={query}
           allowAutofocus={allowAutofocus}
-          showSpinner={hasQueried && ready === false}
+          showSpinner={isSearching}
           onChange={(next) => {
             setQuery(next);
-            setMatchedIds([]);
-            setHasQueried(true);
             classify(next);
           }}
           onClear={() => {
             setQuery("");
-            setMatchedIds([]);
+            classify("");
           }}
           onChip={(chip) => {
             setQuery(chip);
-            setMatchedIds([]);
-            setHasQueried(true);
             classify(chip);
           }}
         />
@@ -161,9 +157,9 @@ export function App() {
             name: x.name,
           })}
         />
-        {hasQueried && ready !== null && (
+        {isSearching && (
           <div className="sr-only" aria-live="polite">
-            {!ready || !matchedIds ? "Loading..." : "Done"}
+            Loading...
           </div>
         )}
       </main>
@@ -185,108 +181,68 @@ export function App() {
 
 /**
  * useEmojiSearch
- * Encapsulates worker + database init and
- * returns status, results, and classify.
+ * React hook wrapper around EmojiSearchCore.
+ * Returns search state and classify function.
  */
 function useEmojiSearch(options: { noCache: boolean }) {
   const { noCache } = options;
-  const initializing = useRef(false);
-  const worker = useRef<Worker | null>(null);
-  const database = useRef<PGlite | null>(null);
+  const coreRef = useRef<EmojiSearchCore | null>(null);
+  const [, forceUpdate] = useState(0);
 
-  // Promise that resolves when DB is ready.
-  // Allows queries to wait instead of failing.
-  const dbReadyPromise = useRef<Promise<PGlite> | null>(null);
-  const dbReadyResolve = useRef<
-    ((db: PGlite) => void) | null
-  >(null);
+  // State synced from core
+  const [state, setState] = useState({
+    matched: null as string[] | null,
+    isSearching: false,
+  });
 
-  const [status, setStatus] = useState<boolean | null>(null);
-  const [matched, setMatched] =
-    useState<string[] | null>(null);
-
-  // Initialize database once.
   useEffect(() => {
-    const setup = async () => {
-      initializing.current = true;
-      const db = await loadPrebuiltDb({
+    // Create dependencies for the core
+    const deps: EmojiSearchDeps = {
+      loadDb: () => loadPrebuiltDb({
         binUrl: R2_TAR_URL,
         noCache,
-      });
-      database.current = db;
-      await countRows(db, "embeddings");
-      // Resolve the ready promise so waiting
-      // queries can proceed.
-      if (dbReadyResolve.current) {
-        dbReadyResolve.current(db);
-      }
+      }),
+      search: (db, embedding) => search(
+        db as Parameters<typeof search>[0],
+        embedding
+      ),
+      createWorker: () => new OptimusWorker(),
     };
-    if (!database.current && !initializing.current) {
-      // Create promise before starting setup so
-      // early queries can await it.
-      dbReadyPromise.current = new Promise((resolve) => {
-        dbReadyResolve.current = resolve;
-      });
-      setup();
-    }
-  }, [noCache]);
 
-  // Initialize worker and handle messages.
-  useEffect(() => {
-    if (!worker.current) {
-      worker.current = new OptimusWorker();
-      // Preload model immediately. Hidden until use.
-      worker.current.postMessage({ type: "preload", noCache });
-    }
-    /**
-     * Handle worker messages and update state.
-     */
-    const onMessageReceived = async (e: MessageEvent) => {
-      switch (e.data.status) {
-        case "initiate":
-          setStatus(false);
-          return;
-        case "ready":
-          setStatus(true);
-          return;
-        case "complete": {
-          // Wait for DB if not ready yet. This
-          // prevents race condition on iOS Safari
-          // where model finishes before DB loads.
-          let db = database.current;
-          if (!db && dbReadyPromise.current) {
-            db = await dbReadyPromise.current;
-          }
-          if (!db) {
-            console.error("DB failed to initialize");
-            return;
-          }
-          const results = await search(
-            db,
-            e.data.embedding,
-          );
-          setMatched(results.map(x => x.identifier));
-          return;
-        }
-        default:
-          // Unknown worker message; ignore to
-          // avoid noisy console during dev.
-          return;
-      }
+    // Create core instance
+    const core = new EmojiSearchCore({
+      deps,
+      onStateChange: () => {
+        // Sync core state to React state
+        setState({
+          matched: core.matched,
+          isSearching: core.isSearching,
+        });
+      },
+    });
+    coreRef.current = core;
+
+    // Initialize (loads DB + preloads model)
+    core.initialize({ noCache });
+
+    return () => {
+      core.destroy();
+      coreRef.current = null;
     };
-    worker.current.addEventListener("message", onMessageReceived);
-    return () =>
-      worker.current?.removeEventListener("message", onMessageReceived);
   }, [noCache]);
 
   /**
-   * Classify the given text using the worker.
+   * Trigger a search query.
    */
-  const classify = useCallback((text: string) => {
-    worker.current?.postMessage({ text, noCache });
-  }, [noCache]);
+  const classify = (text: string) => {
+    coreRef.current?.classify(text, { noCache });
+  };
 
-  return { matched, status, classify } as const;
+  return {
+    matched: state.matched,
+    isSearching: state.isSearching,
+    classify,
+  };
 }
 
 /**
