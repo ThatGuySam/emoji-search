@@ -6,7 +6,7 @@
  *
  * Written by AI (Claude Opus 4.5)
  *
- * @vitest-environment jsdom
+ * @vitest-environment node
  */
 import { describe, it, expect } from 'vitest'
 

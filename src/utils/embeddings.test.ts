@@ -1,3 +1,12 @@
+/**
+ * embeddings.test.ts
+ *
+ * Uses @vitest-environment node because pglite
+ * and DataView require native ArrayBuffer, not
+ * jsdom's polyfill.
+ *
+ * @vitest-environment jsdom
+ */
 import { describe, it, expect } from 'vitest'
 import {
   packEmbeddingsBinary,

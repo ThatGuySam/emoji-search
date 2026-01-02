@@ -1,3 +1,11 @@
+/**
+ * search.test.ts
+ *
+ * Uses @vitest-environment node because onnxruntime
+ * requires native Float32Array, not jsdom's polyfill.
+ *
+ * @vitest-environment node
+ */
 import { describe, it, expect, beforeAll } from 'vitest'
 import fs from 'node:fs/promises'
 
