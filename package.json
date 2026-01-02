@@ -52,6 +52,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/browser": "^4.0.16",
     "@vitest/browser-playwright": "^4.0.16",
+    "blob-polyfill": "^9.0.20240710",
     "class-variance-authority": "^0.7.1",
     "concurrently": "^9.2.0",
     "daisyui": "^5.1.3",
