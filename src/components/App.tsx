@@ -30,6 +30,18 @@ import {
 export function App() {
   const [query, setQuery] = useState("");
   const [spacerHeight, setSpacerHeight] = useState(0);
+
+  // Log cross-origin isolation status on mount
+  // for debugging SharedArrayBuffer availability
+  useEffect(() => {
+    console.log("[CrossOriginIsolation]", {
+      crossOriginIsolated,
+      hasSharedArrayBuffer:
+        typeof SharedArrayBuffer !== "undefined",
+      hasAtomics: typeof Atomics !== "undefined",
+      origin: location.origin,
+    });
+  }, []);
   const [sheet, setSheet] = useState<{
     open: boolean;
     char: string;
