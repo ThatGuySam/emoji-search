@@ -22,11 +22,20 @@ Status: `partially verified`
   - status: `passed`
 - `curl -I https://fetchmoji.samcarlton.workers.dev/db/emoji-search.sqlite`
   - status: `passed`
+- `curl -I https://fetchmoji.com/`
+  - status: `passed`
+- `curl -I https://fetchmoji.com/db/emoji-search.sqlite`
+  - status: `passed`
 - browser smoke against:
   - `https://fetchmoji.samcarlton.workers.dev/`
   - `https://fetchmoji.samcarlton.workers.dev/?search_backend=sqlite&strict_backend=1`
   - status: `passed`
   - note: backend badge showed `PGLITE` on default and `SQLITE` on the query-string route
+- browser smoke against:
+  - `https://fetchmoji.com/`
+  - `https://fetchmoji.com/?search_backend=sqlite&strict_backend=1`
+  - status: `passed`
+  - note: backend badge showed `PGLITE` on default and `SQLITE` on the query-string route with no fallback detected
 
 ## What Was Verified
 
@@ -36,6 +45,8 @@ Status: `partially verified`
 - The live app loads and renders with the SQLite backend selected via query
   string.
 - The default route still resolves to the existing `pglite` backend.
+- The same query-string routing works on the production hostname
+  `https://fetchmoji.com`.
 
 ## What Remains Unverified
 
