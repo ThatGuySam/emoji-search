@@ -26,3 +26,4 @@ export const DB_TAR_GZ = `${DB_TAR}.gz`
 export const DB_TAR_ZST = `${DB_TAR}.zst`
 
 export const R2_TAR_URL = `https://cdn.fetchmoji.com/db/src/artifacts/${DB_TAR_PATH}`
+export const SQLITE_DB_URL = '/db/emoji-search.sqlite'

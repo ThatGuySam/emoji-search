@@ -8,7 +8,10 @@ import {
   loadPrebuiltDb,
 } from "@/utils/db";
 import OptimusWorker from "@/utils/worker.ts?worker";
-import { R2_TAR_URL } from "@/constants";
+import {
+  R2_TAR_URL,
+  SQLITE_DB_URL,
+} from "@/constants";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import {
@@ -22,6 +25,16 @@ import {
   EmojiSearchCore,
   type EmojiSearchDeps,
 } from "@/hooks/useEmojiSearch";
+import {
+  resolveSearchConfig,
+  type SearchBackend,
+  type SearchConfig,
+} from "@/utils/searchConfig";
+import {
+  loadSqliteDb,
+  searchSqlite,
+  type SqliteSearchDb,
+} from "@/utils/sqlite";
 /**
  * App
  * Emoji semantic search UI using a worker
@@ -30,6 +43,7 @@ import {
 export function App() {
   const [query, setQuery] = useState("");
   const [spacerHeight, setSpacerHeight] = useState(0);
+  const searchConfig = resolveSearchConfig();
 
   // Log cross-origin isolation status on mount
   // for debugging SharedArrayBuffer availability
@@ -60,8 +74,16 @@ export function App() {
       return false;
     }
   })();
-  const { matched, isSearching, classify } =
-    useEmojiSearch({ noCache });
+  const {
+    matched,
+    isSearching,
+    classify,
+    backend,
+    backendError,
+  } = useEmojiSearch({
+    noCache,
+    searchConfig,
+  });
 
   /**
    * Copy the selected emoji and show a toast.
@@ -159,6 +181,14 @@ export function App() {
       <main className="min-h-0 overflow-y-auto p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
         <div className="text-sm font-medium text-muted-foreground mb-2">
           Results
+          <span className="ml-2 text-xs font-normal uppercase tracking-wide">
+            {backend}
+          </span>
+          {backendError ? (
+            <span className="ml-2 text-xs font-normal text-amber-700">
+              fallback
+            </span>
+          ) : null}
         </div>
         <ResultGrid
           results={results}
@@ -196,28 +226,96 @@ export function App() {
  * React hook wrapper around EmojiSearchCore.
  * Returns search state and classify function.
  */
-function useEmojiSearch(options: { noCache: boolean }) {
-  const { noCache } = options;
+type SearchDbHandle =
+  | {
+      kind: 'pglite'
+      db: Parameters<typeof search>[0]
+    }
+  | {
+      kind: 'sqlite'
+      db: SqliteSearchDb
+    }
+
+function useEmojiSearch(options: {
+  noCache: boolean
+  searchConfig: SearchConfig
+}) {
+  const { noCache, searchConfig } = options;
   const coreRef = useRef<EmojiSearchCore | null>(null);
-  const [, forceUpdate] = useState(0);
 
   // State synced from core
   const [state, setState] = useState({
     matched: null as string[] | null,
     isSearching: false,
+    backend: 'pglite' as SearchBackend,
+    backendError: null as string | null,
   });
 
   useEffect(() => {
+    let cancelled = false;
+
+    const setBackendState = (
+      backend: SearchBackend,
+      backendError: string | null = null,
+    ) => {
+      if (cancelled) return;
+      setState((prev) => ({
+        ...prev,
+        backend,
+        backendError,
+      }));
+    };
+
     // Create dependencies for the core
     const deps: EmojiSearchDeps = {
-      loadDb: () => loadPrebuiltDb({
-        binUrl: R2_TAR_URL,
-        noCache,
-      }),
-      search: (db, embedding) => search(
-        db as Parameters<typeof search>[0],
-        embedding
-      ),
+      loadDb: async () => {
+        if (searchConfig.backend === "sqlite") {
+          try {
+            const db = await loadSqliteDb({
+              dbUrl: SQLITE_DB_URL,
+              noCache,
+            });
+            setBackendState("sqlite");
+            return {
+              kind: "sqlite",
+              db,
+            } satisfies SearchDbHandle;
+          } catch (error) {
+            console.error(
+              "[sqlite experiment] init failed",
+              error,
+            );
+
+            if (searchConfig.strictBackend) {
+              throw error;
+            }
+
+            setBackendState(
+              "pglite",
+              "sqlite init failed",
+            );
+          }
+        }
+
+        const db = await loadPrebuiltDb({
+          binUrl: R2_TAR_URL,
+          noCache,
+        });
+        setBackendState("pglite");
+        return {
+          kind: "pglite",
+          db,
+        } satisfies SearchDbHandle;
+      },
+      search: async (db, embedding) => {
+        const handle = db as SearchDbHandle;
+
+        if (handle.kind === "sqlite") {
+          return searchSqlite(handle.db, embedding);
+        }
+
+        return search(handle.db, embedding);
+      },
       createWorker: () => new OptimusWorker(),
     };
 
@@ -226,10 +324,11 @@ function useEmojiSearch(options: { noCache: boolean }) {
       deps,
       onStateChange: () => {
         // Sync core state to React state
-        setState({
+        setState((prev) => ({
+          ...prev,
           matched: core.matched,
           isSearching: core.isSearching,
-        });
+        }));
       },
     });
     coreRef.current = core;
@@ -238,10 +337,15 @@ function useEmojiSearch(options: { noCache: boolean }) {
     core.initialize({ noCache });
 
     return () => {
+      cancelled = true;
       core.destroy();
       coreRef.current = null;
     };
-  }, [noCache]);
+  }, [
+    noCache,
+    searchConfig.backend,
+    searchConfig.strictBackend,
+  ]);
 
   /**
    * Trigger a search query.
@@ -253,6 +357,8 @@ function useEmojiSearch(options: { noCache: boolean }) {
   return {
     matched: state.matched,
     isSearching: state.isSearching,
+    backend: state.backend,
+    backendError: state.backendError,
     classify,
   };
 }
