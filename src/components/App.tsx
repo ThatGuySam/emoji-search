@@ -14,6 +14,7 @@ import {
 } from "@/constants";
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
+import { ResultGrid } from "@/components/ResultGrid";
 import {
   Sheet,
   SheetContent,
@@ -434,60 +435,6 @@ function SearchHeader(props: {
         ))}
       </div>
     </>
-  );
-}
-
-/**
- * ResultGrid
- * Responsive grid of emoji results.
- */
-function ResultGrid(props: {
-  results: string[];
-  onCopy: (x: { char: string; name: string }) => void;
-  onMenu: (x: { char: string; name: string }) => void;
-}) {
-  const { results, onCopy, onMenu } = props;
-  return (
-    <div
-      className="grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))]
-      gap-3"
-      role="list"
-    >
-      {results.map((row) => {
-        const [emojiChar, emojiName] = (() => {
-          const parts = String(row).split(" ");
-          const ec = parts[0] ?? "";
-          const en = parts.slice(1).join(" ") || "emoji";
-          return [ec, en] as const;
-        })();
-        return (
-          <button
-            key={row}
-            role="listitem"
-            aria-label={`Copy ${emojiName} emoji`}
-            className="flex items-center justify-center gap-1
-            min-h-11 min-w-11 p-2 rounded-2xl border bg-secondary
-            shadow-sm hover:shadow transition active:scale-95"
-            onClick={() => onCopy({
-              char: emojiChar,
-              name: emojiName,
-            })}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              onMenu({ char: emojiChar, name: emojiName });
-            }}
-          >
-            <span
-              role="img"
-              aria-label={emojiName}
-              className="text-[clamp(22px,4.6vh,32px)] leading-none"
-            >
-              {emojiChar}
-            </span>
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
