@@ -1,0 +1,45 @@
+name: Site Health
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - uses: actions/setup-node@v5
+        with:
+          cache: pnpm
+          node-version: 24
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium for audits
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run site health audits
+        run: pnpm audit:health
+
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-health-reports
+          path: |
+            .lighthouseci
+            .reports/site-health
+          if-no-files-found: ignore

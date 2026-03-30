@@ -11,6 +11,10 @@
     "dev:wrangler": "wrangler pages dev --proxy 4321 --port 8787",
     "build": "astro build",
     "preview": "astro preview",
+    "audit:links": "linkinator dist --recurse --clean-urls --check-fragments --skip '^https?://' --verbosity error",
+    "audit:lighthouse": "node scripts/run-site-audits.mjs lighthouse",
+    "audit:pa11y": "node scripts/run-site-audits.mjs pa11y",
+    "audit:health": "pnpm build && pnpm audit:links && node scripts/run-site-audits.mjs all",
     "astro": "astro",
     "seed": "bun scripts/seed-emoji.ts",
     "seed:sqlite": "bun scripts/build-sqlite-db.ts",
@@ -45,6 +49,7 @@
     "zod": "^4.0.17"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
     "@radix-ui/react-dialog": "^1.1.15",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
@@ -60,7 +65,9 @@
     "concurrently": "^9.2.0",
     "daisyui": "^5.1.3",
     "jsdom": "^26.1.0",
+    "linkinator": "^7.6.1",
     "lucide-react": "^0.542.0",
+    "pa11y": "^9.1.1",
     "playwright": "^1.57.0",
     "tailwind-merge": "^3.3.1",
     "tw-animate-css": "^1.3.7",

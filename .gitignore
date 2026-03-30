@@ -25,3 +25,5 @@ pnpm-debug.log*
 /.wrangler
 /.env.local
 /.tmp
+.lighthouseci/
+.reports/
