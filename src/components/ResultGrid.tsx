@@ -11,7 +11,6 @@ export function ResultGrid(props: {
     <ul
       className="grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))]
       gap-3"
-      role="list"
     >
       {results.map((row) => {
         const { char, name } = parseEmojiResult(row)
