@@ -1,0 +1,88 @@
+---
+import { getEmojiName } from '../utils/emojiResult'
+
+type Props = {
+	emojis: readonly string[]
+	eyebrow?: string
+	description?: string
+}
+
+const {
+	emojis,
+	eyebrow = 'Tap an emoji to copy',
+	description = 'Pick the closest match and keep moving.',
+} = Astro.props as Props
+
+const items = [...new Set(emojis)].map((emoji) => ({
+	emoji,
+	name: getEmojiName(emoji) ?? 'emoji',
+}))
+---
+
+<section
+	class="rounded-[2rem] border border-border bg-card/95 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.2)]"
+	data-emoji-copy-root
+>
+	<div class="space-y-3">
+		<div class="space-y-1">
+			<p class="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{eyebrow}</p>
+			<p class="text-sm text-muted-foreground">{description}</p>
+		</div>
+
+		<div class="grid grid-cols-3 gap-3 sm:grid-cols-5">
+			{
+				items.map((item) => (
+					<button
+						type="button"
+						class="flex min-h-20 items-center justify-center rounded-[1.35rem] border border-border bg-secondary/80 text-[clamp(2rem,9vw,3rem)] leading-none shadow-sm transition hover:border-primary/40 hover:bg-secondary active:scale-[0.98]"
+						data-copy-emoji={item.emoji}
+						data-copy-name={item.name}
+						data-quick-copy-button
+						aria-label={`Copy ${item.name} emoji`}
+						title={`Copy ${item.name}`}
+					>
+						<span aria-hidden="true">{item.emoji}</span>
+					</button>
+				))
+			}
+		</div>
+	</div>
+
+	<div
+		class="emoji-copy-toast"
+		data-emoji-copy-toast
+		role="status"
+		aria-live="polite"
+		aria-atomic="true"
+	></div>
+</section>
+
+<script>
+	import { bindEmojiCopySurface } from '../lib/emojiCopySurface'
+
+	bindEmojiCopySurface()
+</script>
+
+<style>
+	.emoji-copy-toast {
+		position: fixed;
+		left: 50%;
+		bottom: calc(env(safe-area-inset-bottom) + 16px);
+		transform: translate(-50%, 8px);
+		padding: 0.8rem 1rem;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in oklch, var(--color-border) 90%, transparent);
+		background: color-mix(in oklch, var(--color-background) 94%, transparent);
+		box-shadow: 0 16px 40px color-mix(in oklch, black 26%, transparent);
+		opacity: 0;
+		pointer-events: none;
+		transition:
+			opacity 160ms ease,
+			transform 160ms ease;
+	}
+
+	.emoji-copy-toast[data-active='true'] {
+		opacity: 1;
+		transform: translate(-50%, 0);
+	}
+ </style>

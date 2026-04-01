@@ -1,18 +1,28 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
     "name": "fetchmoji",
-    // Update to today's date
-    "compatibility_date": "2025-03-25",
+    "compatibility_date": "2026-03-30",
     "main": "src/worker.ts",
     "assets": {
       "directory": "./dist",
-      // Only run the worker for path we actually need it for
-      // so that we keep our static assets fast
-      "run_worker_first": [
-        "/worker-disabled-for-now"
-        // "/**/*.tar*",
-        // "/**/*.bin*"
-      ],
-      "not_found_handling": "404-page" // If you have a custom `src/pages/404.astro` page
+      "binding": "ASSETS",
+      // Run worker for all routes to add COOP/COEP headers
+      // (required for SharedArrayBuffer / multi-threading)
+      "run_worker_first": true,
+      "not_found_handling": "404-page"
+    },
+    "env": {
+      "seo_preview": {
+        "name": "fetchmoji-seo-preview",
+        "routes": [
+          {
+            "pattern": "seo-preview.fetchmoji.com",
+            "custom_domain": true
+          }
+        ],
+        "vars": {
+          "PREVIEW_NOINDEX": "true"
+        }
+      }
     }
 }

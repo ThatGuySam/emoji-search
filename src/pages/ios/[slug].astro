@@ -1,0 +1,124 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content'
+
+import Layout from '../../layouts/Layout.astro'
+import {
+  getEmojiIntentBySlug,
+  getEmojiIntentLeadEmoji,
+  getEmojiIntentRoute,
+} from '../../data/emojiIntents'
+
+type SupportEntry = CollectionEntry<'support-pages'>
+type IntentEntry = CollectionEntry<'intent-pages'>
+
+type PageProps = {
+  entry: SupportEntry
+  relatedIntents: IntentEntry[]
+}
+
+export async function getStaticPaths() {
+  const supportEntries = await getCollection('support-pages')
+  const intentEntries = await getCollection('intent-pages')
+
+  return supportEntries.map((entry) => {
+    const relatedIntents = entry.data.relatedIntentSlugs
+      .map((relatedSlug) =>
+        intentEntries.find(
+          (candidate) =>
+            candidate.slug === relatedSlug,
+        ),
+      )
+      .filter(
+        (candidate): candidate is IntentEntry =>
+          candidate != null,
+      )
+
+    return {
+      params: {
+        slug: entry.slug,
+      },
+      props: {
+        entry,
+        relatedIntents,
+      } satisfies PageProps,
+    }
+  })
+}
+
+const { entry, relatedIntents } =
+  Astro.props as PageProps
+const { Content } = await entry.render()
+
+function getLeadEmojiForSlug(slug: string) {
+  const intent = getEmojiIntentBySlug(slug)
+  return intent ? getEmojiIntentLeadEmoji(intent) : '🔎'
+}
+---
+
+<Layout
+	title={entry.data.title}
+	description={entry.data.description}
+	canonicalPath={`/ios/${entry.slug}/`}
+	noindex={true}
+	robots="noindex, nofollow"
+>
+	<main class="mx-auto max-w-3xl px-4 pb-16 pt-24">
+		<nav class="mb-4 text-sm text-muted-foreground">
+			<a href="/ios/" class="no-underline hover:underline">iOS support</a>
+			<span class="mx-2">/</span>
+			<span>{entry.slug}</span>
+		</nav>
+
+		<article class="space-y-7">
+			<header class="space-y-3">
+				<p class="text-sm uppercase tracking-[0.16em] text-muted-foreground">iOS support</p>
+				<h1 class="text-3xl font-semibold leading-tight">{entry.data.h1}</h1>
+				<p class="text-muted-foreground">{entry.data.issue}</p>
+			</header>
+
+			<section class="rounded-2xl border border-border bg-card p-4 text-sm leading-7">
+				<Content />
+			</section>
+
+			<section class="rounded-2xl border border-border bg-card p-4">
+				<h2 class="text-base font-medium">Fast fallback</h2>
+				<p class="mt-2 text-sm text-muted-foreground">
+					If native search still fails phrase intent, open FetchMoji and type the meaning you want.
+				</p>
+				<a
+					class="mt-4 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground no-underline"
+					href="/"
+				>
+					{entry.data.ctaLabel}
+				</a>
+			</section>
+
+			{
+				relatedIntents.length > 0 ? (
+					<section>
+						<h2 class="text-base font-medium">Related phrase pages</h2>
+						<div class="mt-3 grid gap-3 md:grid-cols-2">
+							{
+								relatedIntents.map((related) => (
+									<a
+										class="rounded-xl border border-border bg-card p-3 no-underline transition hover:border-primary/40"
+										data-related-intent-link
+										href={getEmojiIntentRoute({
+											slug: related.slug,
+										})}
+									>
+										<h3 class="flex items-center gap-2 text-sm font-medium text-foreground" data-related-intent-label>
+											<span aria-hidden="true" data-related-intent-emoji>{getLeadEmojiForSlug(related.slug)}</span>
+											<span>{related.data.query}</span>
+										</h3>
+										<p class="mt-1 text-sm text-muted-foreground">{related.data.description}</p>
+									</a>
+								))
+							}
+						</div>
+					</section>
+				) : null
+			}
+		</article>
+	</main>
+</Layout>

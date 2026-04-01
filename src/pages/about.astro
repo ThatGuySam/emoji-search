@@ -1,0 +1,61 @@
+---
+import Layout from '../layouts/Layout.astro'
+
+const title = 'About FetchMoji'
+const description =
+  'How FetchMoji generates emoji recommendations, editorial pages, and multilingual drafts.'
+---
+
+<Layout
+	title={title}
+	description={description}
+	canonicalPath="/about/"
+>
+	<main class="mx-auto max-w-3xl px-4 pb-16 pt-24">
+		<article class="space-y-7">
+			<header class="space-y-3">
+				<p class="text-sm uppercase tracking-[0.16em] text-muted-foreground">Methodology</p>
+				<h1 class="text-3xl font-semibold leading-tight">About FetchMoji</h1>
+				<p class="text-muted-foreground">
+					FetchMoji helps you find emoji by intent phrases, not just strict keyboard labels.
+				</p>
+			</header>
+
+			<section class="rounded-2xl border border-border bg-card p-4">
+				<h2 class="text-base font-medium">How recommendations are built</h2>
+				<ul class="mt-2 list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+					<li>Semantic search runs client-side over a prebuilt emoji vector corpus.</li>
+					<li>Emoji pages use a shared catalog of phrase-to-emoji mappings.</li>
+					<li>Support pages are concise and focused on practical next actions.</li>
+				</ul>
+			</section>
+
+			<section class="rounded-2xl border border-border bg-card p-4">
+				<h2 class="text-base font-medium">Editorial policy</h2>
+				<ul class="mt-2 list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+					<li>Support pages stay draft-only until human-reviewed and ready to publish.</li>
+					<li>Localized drafts are generated with QA flags and require human approval.</li>
+					<li>Thin or auto-generated pages are intentionally avoided.</li>
+				</ul>
+			</section>
+
+			<section class="rounded-2xl border border-border bg-card p-4">
+				<h2 class="text-base font-medium">Start exploring</h2>
+				<div class="mt-3 flex flex-wrap gap-2">
+					<a
+						class="inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground no-underline"
+						href="/"
+					>
+						Open search
+					</a>
+					<a
+						class="inline-flex rounded-xl border border-border px-4 py-2 text-sm font-medium no-underline"
+						href="/emoji-for/"
+					>
+						Browse emojis
+					</a>
+				</div>
+			</section>
+		</article>
+	</main>
+</Layout>

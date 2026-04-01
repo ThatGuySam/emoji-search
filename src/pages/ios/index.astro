@@ -1,0 +1,49 @@
+---
+import { getCollection } from 'astro:content'
+
+import Layout from '../../layouts/Layout.astro'
+
+const entries = (await getCollection('support-pages')).sort(
+	(left, right) => left.data.h1.localeCompare(right.data.h1),
+)
+
+const pageTitle = 'iOS emoji search help'
+const pageDescription =
+	'Browse short iPhone and iOS emoji-search troubleshooting pages, plus quick fallbacks into FetchMoji.'
+---
+
+<Layout
+	title={pageTitle}
+	description={pageDescription}
+	canonicalPath="/ios/"
+	noindex={true}
+	robots="noindex, nofollow"
+>
+	<main class="mx-auto max-w-3xl px-4 pb-12 pt-24">
+		<header class="space-y-3">
+			<p class="text-sm uppercase tracking-[0.16em] text-muted-foreground">iOS Hub</p>
+			<h1 class="text-3xl font-semibold leading-tight">iPhone and iOS emoji search help</h1>
+			<p class="max-w-2xl text-muted-foreground">
+				Start with the issue that looks closest to what your keyboard is doing, then jump back
+				into FetchMoji if native search still misses the meaning you want.
+			</p>
+		</header>
+
+		<section class="mt-8 grid gap-4 md:grid-cols-2">
+			{
+				entries.map((entry) => (
+					<a
+						class="rounded-2xl border border-border bg-card p-4 no-underline transition hover:border-primary/40 hover:bg-card/80"
+						href={`/ios/${entry.slug}/`}
+					>
+						<h2 class="flex items-center gap-2 text-lg font-medium text-foreground">
+							<span aria-hidden="true">📱</span>
+							<span>{entry.data.h1}</span>
+						</h2>
+						<p class="mt-2 text-sm text-muted-foreground">{entry.data.description}</p>
+					</a>
+				))
+			}
+		</section>
+	</main>
+</Layout>

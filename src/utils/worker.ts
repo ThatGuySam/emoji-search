@@ -5,6 +5,7 @@ import { env, pipeline } from '@huggingface/transformers'
 import {
   MODELS_HOST,
   MODELS_PATH_TEMPLATE,
+  PROXY_MODELS_PATH_TEMPLATE,
   DEFAULT_MODEL,
 } from '../constants'
 import { defaultPipelineOptions } from './hf'
@@ -32,12 +33,18 @@ import { defaultPipelineOptions } from './hf'
 
 // keep remote, but point to your host (CORS required)
 env.allowRemoteModels = true
-env.remoteHost = MODELS_HOST
-// Working path for https://cdn.fetchmoji.com
+env.remoteHost =
+  self.location?.origin ?? MODELS_HOST
+// Route model fetches through the worker origin
+// so preview and future custom domains do not
+// depend on external CORS allowlists.
 /**
  * {filename} is not a thing in this version of transformers
  */
-env.remotePathTemplate = MODELS_PATH_TEMPLATE
+env.remotePathTemplate =
+  self.location?.origin
+    ? PROXY_MODELS_PATH_TEMPLATE
+    : MODELS_PATH_TEMPLATE
 // env.backends.onnx.wasm.wasmPaths = 'https://cdn.fetchmoji.com/wasm/'
 
 /**

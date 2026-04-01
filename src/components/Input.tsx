@@ -9,10 +9,14 @@ export interface InputProps
  * Input
  * Extends shadcn input with larger radius.
  */
-export function Input(props: InputProps) {
+export const Input = React.forwardRef<
+  HTMLInputElement,
+  InputProps
+>(function Input(props, ref) {
   const { className, ...rest } = props
   return (
     <UI
+      ref={ref}
       type="search"
       enterKeyHint="search"
       autoCapitalize="off"
@@ -22,6 +26,5 @@ export function Input(props: InputProps) {
       {...rest}
     />
   )
-}
-
+})
 

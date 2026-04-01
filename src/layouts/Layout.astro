@@ -1,39 +1,164 @@
 ---
 import '../styles/global.css';
+import {
+	SITE_META,
+	buildPageMeta,
+	normalizePath,
+} from '../lib/siteMeta';
 
-const title = 'FetchMoji';
-const description =
-  'Find the perfect emoji using your ' +
-  'own words. All ranking and ' +
-  'inference run fully client‑side ' +
-  '(no servers, no telemetry).';
-const siteUrl = 'https://emoji.samcarlton.com';
+const pathname = Astro.url.pathname;
+const isHomePage = pathname === '/';
+const primaryNavLinks = [
+	{
+		href: '/emoji-for/',
+		label: 'Emojis',
+		isActive: pathname.startsWith('/emoji-for/'),
+	},
+	{
+		href: '/about/',
+		label: 'About',
+		isActive: pathname.startsWith('/about/'),
+	},
+];
+
+type Props = {
+	title?: string;
+	description?: string;
+	canonicalPath?: string;
+	noindex?: boolean;
+	robots?: string;
+	lang?: string;
+};
+
+const props = Astro.props as Props;
+const meta = buildPageMeta({
+	pageTitle: props.title,
+	description: props.description,
+	canonicalPath: props.canonicalPath ?? pathname,
+});
+const canonicalUrl = new URL(
+	normalizePath(meta.canonicalPath),
+	SITE_META.url,
+).toString();
+const robotsDirective =
+	props.robots ??
+	(props.noindex ? 'noindex, nofollow' : 'index, follow');
 ---
 <!doctype html>
-<html lang="en">
+<html lang={props.lang ?? 'en'} class="dark">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="dns-prefetch" href="//cdn.fetchmoji.com" />
+		<link rel="preconnect" href="https://cdn.fetchmoji.com" crossorigin />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
+		<title>{meta.title}</title>
 
-		<meta name="description" content={description} />
-		<meta name="application-name" content={title} />
-		<meta name="apple-mobile-web-app-title" content={title} />
+		<meta name="description" content={meta.description} />
+		<meta name="application-name" content={SITE_META.name} />
+		<meta name="apple-mobile-web-app-title" content={SITE_META.name} />
+		<meta name="robots" content={robotsDirective} />
+		<link rel="canonical" href={canonicalUrl} />
 
 		<meta property="og:type" content="website" />
-		<meta property="og:site_name" content={title} />
-		<meta property="og:title" content={title} />
-		<meta property="og:description" content={description} />
-		<meta property="og:url" content={siteUrl} />
+		<meta property="og:site_name" content={SITE_META.name} />
+		<meta property="og:title" content={meta.title} />
+		<meta property="og:description" content={meta.description} />
+		<meta property="og:url" content={canonicalUrl} />
 
 		<meta name="twitter:card" content="summary" />
-		<meta name="twitter:title" content={title} />
-		<meta name="twitter:description" content={description} />
+		<meta name="twitter:title" content={meta.title} />
+		<meta name="twitter:description" content={meta.description} />
 	</head>
-	<body class="dark">
+	<body>
+		<header class="site-top-nav" data-top-nav>
+			<div class="site-top-nav__inner">
+				<a class="site-top-nav__brand" href="/">
+					<span aria-hidden="true">🔎</span>
+					<span>FetchMoji</span>
+				</a>
+
+				<nav class="site-top-nav__links" aria-label="Primary">
+					{
+						primaryNavLinks.map((link) => (
+							<a
+								href={link.href}
+								class:list={[
+									'site-top-nav__link',
+									{
+										'site-top-nav__link--active': link.isActive,
+									},
+								]}
+								data-top-nav-link
+								data-home-browse-link={isHomePage ? 'true' : undefined}
+							>
+								{link.label}
+							</a>
+						))
+					}
+				</nav>
+
+				<a
+					class="site-top-nav__search"
+					href="/"
+					aria-label="Open emoji search on home page"
+					data-top-nav-search
+				>
+					<span aria-hidden="true">🔎</span>
+					<span>Search</span>
+					<span class="site-top-nav__shortcut" aria-hidden="true">⌘K</span>
+				</a>
+			</div>
+		</header>
 		<slot />
+		<script is:inline>
+			(() => {
+				const openHomeSearch = () => {
+					if (window.location.pathname !== '/') {
+						window.location.assign('/');
+						return;
+					}
+
+					const searchInput = document.querySelector(
+						'input[type="search"], input[aria-label*="Search emoji"]',
+					);
+
+					if (searchInput instanceof HTMLInputElement || searchInput instanceof HTMLTextAreaElement) {
+						searchInput.focus();
+						searchInput.select();
+					}
+				};
+
+				window.addEventListener('keydown', (event) => {
+					if (event.defaultPrevented) {
+						return;
+					}
+					if (!(event.metaKey || event.ctrlKey)) {
+						return;
+					}
+					if (event.key.toLowerCase() !== 'k') {
+						return;
+					}
+
+					event.preventDefault();
+					openHomeSearch();
+				});
+
+				document
+					.querySelectorAll('[data-top-nav-search]')
+					.forEach((link) => {
+						link.addEventListener('click', (event) => {
+							if (window.location.pathname !== '/') {
+								return;
+							}
+
+							event.preventDefault();
+							openHomeSearch();
+						});
+					});
+			})();
+		</script>
 	</body>
 </html>
 
@@ -43,5 +168,118 @@ const siteUrl = 'https://emoji.samcarlton.com';
 		margin: 0;
 		width: 100%;
 		height: 100%;
+		background-color: var(--background);
+		color: var(--foreground);
+		color-scheme: dark;
+	}
+
+	.site-top-nav {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		padding: max(0.75rem, env(safe-area-inset-top)) 0.9rem 0.75rem;
+		background:
+			linear-gradient(
+				180deg,
+				color-mix(in oklch, var(--background) 96%, black 4%),
+				color-mix(in oklch, var(--background) 88%, transparent)
+			);
+		backdrop-filter: blur(14px);
+		border-bottom: 1px solid color-mix(in oklch, var(--border) 85%, transparent);
+		box-shadow: 0 12px 40px color-mix(in oklch, black 35%, transparent);
+	}
+
+	.site-top-nav__inner {
+		max-width: 72rem;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		padding: 0.35rem 0.45rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in oklch, var(--border) 90%, transparent);
+		background: color-mix(in oklch, var(--card) 96%, black 4%);
+		box-shadow: inset 0 1px 0 color-mix(in oklch, white 6%, transparent);
+	}
+
+	.site-top-nav__brand,
+	.site-top-nav__search {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.55rem 0.8rem;
+		border: 1px solid color-mix(in oklch, var(--border) 90%, transparent);
+		background: color-mix(in oklch, var(--secondary) 92%, black 8%);
+		border-radius: 999px;
+		font-size: 0.9rem;
+		line-height: 1;
+		color: var(--foreground);
+		text-decoration: none;
+		box-shadow:
+			inset 0 1px 0 color-mix(in oklch, white 6%, transparent),
+			0 8px 24px color-mix(in oklch, black 18%, transparent);
+	}
+
+	.site-top-nav__links {
+		display: inline-flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+	}
+
+	.site-top-nav__link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.35rem;
+		padding: 0.55rem 0.9rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in oklch, transparent 100%, transparent);
+		font-size: 0.92rem;
+		line-height: 1;
+		color: var(--muted-foreground);
+		text-decoration: none;
+		transition:
+			background 140ms ease,
+			border-color 140ms ease,
+			color 140ms ease;
+	}
+
+	.site-top-nav__link:hover,
+	.site-top-nav__link:focus-visible,
+	.site-top-nav__link--active {
+		color: var(--foreground);
+		border-color: color-mix(in oklch, var(--border) 95%, transparent);
+		background: color-mix(in oklch, var(--secondary) 88%, black 12%);
+		box-shadow: inset 0 1px 0 color-mix(in oklch, white 5%, transparent);
+	}
+
+	.site-top-nav__shortcut {
+		font-size: 0.72rem;
+		padding: 0.2rem 0.35rem;
+		border-radius: 0.4rem;
+		border: 1px solid color-mix(in oklch, var(--border) 95%, transparent);
+		background: color-mix(in oklch, var(--muted) 92%, black 8%);
+	}
+
+	@media (max-width: 768px) {
+		.site-top-nav {
+			padding-inline: 0.75rem;
+		}
+
+		.site-top-nav__inner {
+			gap: 0.55rem;
+			border-radius: 1.35rem;
+		}
+
+		.site-top-nav__brand,
+		.site-top-nav__search {
+			padding-inline: 0.7rem;
+		}
+
+		.site-top-nav__shortcut {
+			display: none;
+		}
 	}
 </style>

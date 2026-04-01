@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content'
+
+import Layout from '../../layouts/Layout.astro'
+import {
+	getEmojiIntentBySlug,
+	getEmojiIntentLeadEmoji,
+	getEmojiIntentRoute,
+} from '../../data/emojiIntents'
+
+const entries = (await getCollection('intent-pages')).sort(
+  (left, right) =>
+    left.data.query.localeCompare(right.data.query),
+)
+
+const pageTitle = 'Emoji for phrases'
+const pageDescription =
+  'Browse phrase-based emoji pages for awkward moments, support messages, and reaction intent.'
+
+function getLeadEmojiForSlug(slug: string) {
+	const intent = getEmojiIntentBySlug(slug)
+	return intent ? getEmojiIntentLeadEmoji(intent) : '🔎'
+}
+---
+
+<Layout
+	title={pageTitle}
+	description={pageDescription}
+	canonicalPath="/emoji-for/"
+>
+	<main class="mx-auto max-w-3xl px-4 pb-12 pt-24">
+		<header class="space-y-3">
+			<p class="text-sm uppercase tracking-[0.16em] text-muted-foreground">Emoji Hub</p>
+			<h1 class="text-3xl font-semibold leading-tight">Emoji for real-world phrases</h1>
+			<p class="max-w-2xl text-muted-foreground">
+				Pick a phrase page below for direct suggestions, nuance notes, and a fast handoff into
+				FetchMoji search.
+			</p>
+		</header>
+
+		<section class="mt-8 grid gap-4 md:grid-cols-2">
+			{
+				entries.map((entry) => (
+					<a
+						class="rounded-2xl border border-border bg-card p-4 no-underline transition hover:border-primary/40 hover:bg-card/80"
+						href={getEmojiIntentRoute({ slug: entry.slug })}
+					>
+						<h2
+							class="flex items-center gap-2 text-lg font-medium text-foreground"
+							data-intent-hub-label
+						>
+							<span aria-hidden="true" data-intent-hub-emoji>{getLeadEmojiForSlug(entry.slug)}</span>
+							<span>{entry.data.query}</span>
+						</h2>
+						<p class="mt-2 text-sm text-muted-foreground">{entry.data.description}</p>
+					</a>
+				))
+			}
+		</section>
+	</main>
+</Layout>

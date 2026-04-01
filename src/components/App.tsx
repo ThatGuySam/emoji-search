@@ -36,6 +36,10 @@ import {
   searchSqlite,
   type SqliteSearchDb,
 } from "@/utils/sqlite";
+import {
+  buildEmojiCopyMessage,
+  copyEmojiToClipboard,
+} from "@/lib/copyEmoji";
 /**
  * App
  * Emoji semantic search UI using a worker
@@ -91,9 +95,11 @@ export function App() {
    */
   const onCopy = (options: { char: string; name: string }) => {
     const { char, name } = options;
-    navigator.clipboard.writeText(char).catch(() => {});
-    if (navigator.vibrate) navigator.vibrate(10);
-    setToast(`Copied ${name} ${char}`);
+    void copyEmojiToClipboard(char);
+    setToast(buildEmojiCopyMessage({
+      char,
+      name,
+    }));
     if (toastTimer.current)
       window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(
@@ -104,21 +110,10 @@ export function App() {
 
   const results = matched ?? [];
   const isCentered = query === "" && results.length === 0;
-
-  // Allow desktop-only autofocus for a11y.
-  const allowAutofocus = (() => {
-    try {
-      const ua = navigator.userAgent.toLowerCase();
-      const isMobile = /iphone|ipad|android|mobile/
-        .test(ua);
-      const coarse = window.matchMedia?.(
-        "(pointer: coarse)",
-      ).matches;
-      return !isMobile && !coarse;
-    } catch {
-      return false;
-    }
-  })();
+  const showResultsMeta =
+    query.length > 0 ||
+    results.length > 0 ||
+    isSearching;
 
   useEffect(() => {
     /**
@@ -162,7 +157,6 @@ export function App() {
       >
         <SearchHeader
           query={query}
-          allowAutofocus={allowAutofocus}
           showSpinner={isSearching}
           onChange={(next) => {
             setQuery(next);
@@ -180,17 +174,19 @@ export function App() {
       </header>
 
       <main className="min-h-0 overflow-y-auto p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-        <div className="text-sm font-medium text-muted-foreground mb-2">
-          Results
-          <span className="ml-2 text-xs font-normal uppercase tracking-wide">
-            {backend}
-          </span>
-          {backendError ? (
-            <span className="ml-2 text-xs font-normal text-amber-700">
-              fallback
+        {showResultsMeta ? (
+          <div className="text-sm font-medium text-muted-foreground mb-2">
+            Results
+            <span className="ml-2 text-xs font-normal uppercase tracking-wide">
+              {backend}
             </span>
-          ) : null}
-        </div>
+            {backendError ? (
+              <span className="ml-2 text-xs font-normal text-amber-700">
+                fallback
+              </span>
+            ) : null}
+          </div>
+        ) : null}
         <ResultGrid
           results={results}
           onCopy={(x) => onCopy(x)}
@@ -370,7 +366,6 @@ function useEmojiSearch(options: {
  */
 function SearchHeader(props: {
   query: string;
-  allowAutofocus: boolean;
   showSpinner: boolean;
   onChange: (next: string) => void;
   onClear: () => void;
@@ -378,12 +373,12 @@ function SearchHeader(props: {
 }) {
   const {
     query,
-    allowAutofocus,
     showSpinner,
     onChange,
     onClear,
     onChip,
   } = props;
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const chips = (!query ? [
     "shout",
     "attach",
@@ -392,13 +387,29 @@ function SearchHeader(props: {
     "secure",
     "search",
   ] : []).slice(0, 6);
+
+  useEffect(() => {
+    if (!inputRef.current) {
+      return;
+    }
+
+    if (document.activeElement === inputRef.current) {
+      return;
+    }
+
+    inputRef.current.focus({
+      preventScroll: true,
+    });
+  }, []);
+
   return (
     <>
       <label className="flex items-center gap-2 whitespace-nowrap">
         <Input
+          ref={inputRef}
           placeholder="Search emojis by meaning… try shout, attach, celebrate"
           aria-label="Search emojis by meaning"
-          autoFocus={allowAutofocus}
+          autoFocus
           value={query}
           onChange={(e) => onChange(e.target.value)}
         />
