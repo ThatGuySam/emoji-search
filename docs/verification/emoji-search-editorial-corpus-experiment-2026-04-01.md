@@ -22,6 +22,7 @@ Status: `verified`
 - experiment results:
   `src/artifacts/experiments/emoji-search-experiments-2026-04-01.json`
   `src/artifacts/experiments/emoji-search-experiments-2026-04-01-gte_small_en.json`
+  `src/artifacts/experiments/emoji-search-experiments-2026-04-01-gte_small_en-google-suggest.json`
 
 ## What Was Verified
 
@@ -164,6 +165,44 @@ The useful distinction is now clear:
 
 - extracted editorial prose is still too noisy
 - curated, short, query-like aliases can materially help retrieval
+
+### Fourth pass: online query proxy from Google autocomplete
+
+External query bundle:
+
+- `src/artifacts/experiments/google-suggest-en-query-bundle-2026-04-01.json`
+- `17` English web-sourced `emoji for ...` queries
+
+Control on external bundle:
+
+- `gte_small_en__humanized_plus_tokens__vector_float_raw`
+  - localized `Hit@10`: `35.29%`
+  - localized `nDCG@10`: `15.26%`
+
+Curated variant on external bundle:
+
+- `gte_small_en__humanized_curated_editorial_plus_tokens__vector_float_raw`
+  - localized `Hit@10`: `64.71%`
+  - localized `nDCG@10`: `36.36%`
+
+Control hybrid on external bundle:
+
+- `gte_small_en__humanized_plus_tokens__hybrid_rrf_equal`
+  - localized `Hit@10`: `29.41%`
+  - localized `nDCG@10`: `16.87%`
+
+Curated hybrid on external bundle:
+
+- `gte_small_en__humanized_curated_editorial_plus_tokens__hybrid_rrf_equal`
+  - localized `Hit@10`: `70.59%`
+  - localized `nDCG@10`: `40.26%`
+
+Interpretation:
+
+- The curated alias source does not just beat the local benchmark.
+- It also strongly beats the control corpus on an outside web-demand proxy.
+- This makes the promotion review for curated aliases materially easier to
+  justify.
 
 ## Conclusion
 
