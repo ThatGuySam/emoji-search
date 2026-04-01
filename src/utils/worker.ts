@@ -1,14 +1,17 @@
 import type {
   FeatureExtractionPipeline,
 } from '@huggingface/transformers'
-import { env, pipeline } from '@huggingface/transformers'
+import { pipeline } from '@huggingface/transformers'
 import {
   MODELS_HOST,
   MODELS_PATH_TEMPLATE,
   PROXY_MODELS_PATH_TEMPLATE,
   DEFAULT_MODEL,
 } from '../constants'
-import { defaultPipelineOptions } from './hf'
+import {
+  configureModelEnv,
+  defaultPipelineOptions,
+} from './hf'
 
 /**
  * Transformers.js V3 Env options
@@ -31,21 +34,42 @@ import { defaultPipelineOptions } from './hf'
  * - Terminate worker on cleanup
  */
 
-// keep remote, but point to your host (CORS required)
-env.allowRemoteModels = true
-env.remoteHost =
-  self.location?.origin ?? MODELS_HOST
-// Route model fetches through the worker origin
-// so preview and future custom domains do not
-// depend on external CORS allowlists.
-/**
- * {filename} is not a thing in this version of transformers
- */
-env.remotePathTemplate =
-  self.location?.origin
-    ? PROXY_MODELS_PATH_TEMPLATE
-    : MODELS_PATH_TEMPLATE
-// env.backends.onnx.wasm.wasmPaths = 'https://cdn.fetchmoji.com/wasm/'
+function configureWorkerModelEnv(noCache?: boolean) {
+  configureModelEnv({
+    noCache,
+    remoteHost:
+      self.location?.origin ?? MODELS_HOST,
+    remotePathTemplate: self.location?.origin
+      ? PROXY_MODELS_PATH_TEMPLATE
+      : MODELS_PATH_TEMPLATE,
+  })
+}
+
+function runtimeErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  return String(error)
+}
+
+function postWorkerError(
+  phase: 'preload' | 'inference',
+  error: unknown,
+) {
+  console.error(
+    `[worker] ${phase} failed`,
+    error,
+  )
+  self.postMessage({
+    status: 'error',
+    error:
+      phase === 'preload'
+        ? 'Search model failed to load. Reload the page and try again.'
+        : 'Search failed. Reload the page and try again.',
+    detail: runtimeErrorMessage(error),
+  })
+}
 
 /**
  * Use the Singleton pattern to enable lazy
@@ -62,11 +86,10 @@ class PipelineSingleton {
     noCache?: boolean,
   ): Promise<FeatureExtractionPipeline> {
     if (this.instance === null) {
+      configureWorkerModelEnv(noCache)
       const created = await pipeline(
         this.task,
-        noCache
-          ? `${this.model}?no_cache=${Date.now()}`
-          : this.model,
+        this.model,
         defaultPipelineOptions({
           progress_callback,
         })
@@ -99,45 +122,57 @@ class PipelineSingleton {
 self.addEventListener('message', async (event) => {
   const data = event.data || {}
 
-  // Dispose request: free model memory.
-  // Important for iOS Safari memory limits.
-  if (data.type === 'dispose') {
-    await PipelineSingleton.dispose()
-    self.postMessage({ status: 'disposed' })
-    return
+  try {
+    // Dispose request: free model memory.
+    // Important for iOS Safari memory limits.
+    if (data.type === 'dispose') {
+      await PipelineSingleton.dispose()
+      self.postMessage({ status: 'disposed' })
+      return
+    }
+
+    // Preload request: initialize pipeline,
+    // but do not run inference.
+    if (data.type === 'preload') {
+      await PipelineSingleton.getInstance(
+        (x: unknown) => {
+          // Forward model loading progress events to the main thread
+          self.postMessage(x)
+        },
+        data.noCache === true,
+      )
+      return
+    }
+
+    // Retrieve the classification pipeline.
+    // When called for the first time, this
+    // will load the pipeline and cache it.
+    const classifier = await PipelineSingleton
+      .getInstance((x: unknown) => {
+        // Track model loading progress
+        self.postMessage(x)
+      }, data.noCache === true)
+
+    // Actually perform the classification
+    const output = await classifier(data.text, {
+      pooling: 'mean',
+      normalize: true,
+    })
+
+    // Extract the embedding output
+    const embedding = Array.from(output.data)
+
+    // Send the output back to the main thread
+    self.postMessage({
+      status: 'complete',
+      embedding,
+    })
+  } catch (error) {
+    postWorkerError(
+      data.type === 'preload'
+        ? 'preload'
+        : 'inference',
+      error,
+    )
   }
-
-  // Preload request: initialize pipeline,
-  // but do not run inference.
-  if (data.type === 'preload') {
-    await PipelineSingleton.getInstance((x: unknown) => {
-      // Forward model loading progress events to the main thread
-      self.postMessage(x)
-    }, data.noCache === true)
-    return
-  }
-
-  // Retrieve the classification pipeline.
-  // When called for the first time, this
-  // will load the pipeline and cache it.
-  const classifier = await PipelineSingleton
-    .getInstance((x: unknown) => {
-      // Track model loading progress
-      self.postMessage(x)
-    }, data.noCache === true)
-
-  // Actually perform the classification
-  const output = await classifier(data.text, {
-    pooling: 'mean',
-    normalize: true,
-  })
-
-  // Extract the embedding output
-  const embedding = Array.from(output.data)
-
-  // Send the output back to the main thread
-  self.postMessage({
-    status: 'complete',
-    embedding,
-  })
 })

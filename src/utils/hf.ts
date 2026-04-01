@@ -32,6 +32,14 @@ export function deviceType(): DeviceType {
 
 type PipelineOptions = Parameters<typeof pipeline>[2]
 
+export type GetEncoderOptions = {
+  noCache?: boolean
+  modelId?: string
+  remoteHost?: string
+  remotePathTemplate?: string
+  pipelineOptions?: Partial<PipelineOptions>
+}
+
 export function defaultPipelineOptions(extra: Partial<PipelineOptions> = {}): PipelineOptions {
   const device = deviceType()
   return {
@@ -42,17 +50,43 @@ export function defaultPipelineOptions(extra: Partial<PipelineOptions> = {}): Pi
   }
 }
 
+export function configureModelEnv(options: {
+  noCache?: boolean
+  remoteHost?: string
+  remotePathTemplate?: string
+} = {}) {
+  const {
+    noCache = false,
+    remoteHost = MODELS_HOST,
+    remotePathTemplate = MODELS_PATH_TEMPLATE,
+  } = options
+
+  env.allowRemoteModels = true
+  env.remoteHost = remoteHost
+  env.remotePathTemplate = remotePathTemplate
+  env.useBrowserCache = !noCache && !isNode
+  env.useFSCache = !noCache
+  env.useWasmCache = !noCache
+  env.fetch = (input, init) =>
+    fetch(
+      input,
+      noCache
+        ? {
+            ...init,
+            cache: 'no-store',
+          }
+        : init
+    )
+}
+
 /**
  * Create the encoder pipeline.
  */
-export async function getEncoder() {
-    // mirror browser worker env
-    env.allowRemoteModels = true
-    env.remoteHost = MODELS_HOST
-    env.remotePathTemplate =
-      MODELS_PATH_TEMPLATE
+export async function getEncoder(
+  options: GetEncoderOptions = {},
+) {
     // Support cache busting via global location
-    const noCache = (() => {
+    const noCache = options.noCache ?? (() => {
       try {
         const usp = new URLSearchParams(location.search)
         return usp.has('no_cache')
@@ -60,13 +94,20 @@ export async function getEncoder() {
         return false
       }
     })()
-    const modelId = noCache
-      ? `${DEFAULT_MODEL}?no_cache=${Date.now()}`
-      : DEFAULT_MODEL
+    configureModelEnv({
+      noCache,
+      remoteHost:
+        options.remoteHost ?? MODELS_HOST,
+      remotePathTemplate:
+        options.remotePathTemplate ??
+        MODELS_PATH_TEMPLATE,
+    })
     const enc = await pipeline(
         'feature-extraction',
-        modelId,
-        defaultPipelineOptions()
+        options.modelId ?? DEFAULT_MODEL,
+        defaultPipelineOptions(
+          options.pipelineOptions ?? {},
+        )
     )
     return enc
 }

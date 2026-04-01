@@ -137,6 +137,40 @@ async function expectCopiedToast(page) {
   })
 }
 
+async function assertSearchSettles(
+  page,
+  query,
+) {
+  const searchbox = page.getByRole('searchbox', {
+    name: /search emojis by meaning/i,
+  })
+  await searchbox.waitFor()
+  await page.waitForTimeout(1000)
+  await searchbox.fill(query)
+  await page.waitForTimeout(250)
+
+  const resultButtons = page.locator(
+    'button[aria-label^="Copy "]',
+  )
+  await resultButtons.first().waitFor({
+    state: 'visible',
+    timeout: 30000,
+  })
+
+  await page
+    .getByText('Searching…')
+    .waitFor({
+      state: 'hidden',
+      timeout: 30000,
+    })
+    .catch(() => {})
+
+  assert.ok(
+    (await resultButtons.count()) >= 1,
+    `Search for "${query}" should render at least one result.`,
+  )
+}
+
 async function assertCorsFetch(
   page,
   baseUrl,
@@ -224,8 +258,10 @@ async function checkHomeDesktop(
 
   await assertCorsFetch(page, baseUrl)
 
-  await searchbox.fill('awkward silence')
-  await page.waitForTimeout(1500)
+  await assertSearchSettles(
+    page,
+    'awkward silence',
+  )
   assert.equal(
     await page
       .locator('text=fallback')
@@ -314,6 +350,10 @@ async function checkMobileScreens(
   await page.getByRole('searchbox', {
     name: /search emojis by meaning/i,
   }).waitFor()
+  await assertSearchSettles(
+    page,
+    'awkward silence',
+  )
   await page.screenshot({
     path: path.join(
       screenshotDir,

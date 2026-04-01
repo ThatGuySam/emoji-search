@@ -26,10 +26,12 @@ import {
  */
 function createMockDeps(options: {
   dbLoadDelay?: number
+  dbLoadError?: Error | null
   searchResults?: { identifier: string }[]
 } = {}) {
   const {
     dbLoadDelay = 0,
+    dbLoadError = null,
     searchResults = [{ identifier: '🎉 party' }],
   } = options
 
@@ -59,6 +61,9 @@ function createMockDeps(options: {
         await new Promise((r) =>
           setTimeout(r, dbLoadDelay)
         )
+      }
+      if (dbLoadError) {
+        throw dbLoadError
       }
       const db = { ready: true }
       return db
@@ -99,6 +104,7 @@ describe('EmojiSearchCore', () => {
       expect(state.modelReady).toBe(false)
       expect(state.dbReady).toBe(false)
       expect(state.isSearching).toBe(false)
+      expect(state.errorMessage).toBeNull()
     })
 
     it('loads DB and preloads model on init', async () => {
@@ -226,6 +232,70 @@ describe('EmojiSearchCore', () => {
         )
 
         expect(core.matched).toContain('🎉 party')
+      }
+    )
+
+    it(
+      'stops searching and reports an error when DB load fails',
+      async () => {
+        const { deps, sendWorkerMessage } =
+          createMockDeps({
+            dbLoadError: new Error('db down'),
+          })
+
+        const core = new EmojiSearchCore({
+          deps,
+          onStateChange: () => {},
+        })
+
+        await core.initialize()
+        core.classify('hello')
+
+        sendWorkerMessage({
+          status: 'complete',
+          embedding: new Array(384).fill(0.1),
+        })
+
+        await vi.waitFor(() =>
+          expect(core.isSearching).toBe(false)
+        )
+
+        expect(core.matched).toBeNull()
+        expect(core.errorMessage).toBe(
+          'Search data failed to load. Reload the page and try again.'
+        )
+        expect(deps.search).not.toHaveBeenCalled()
+      }
+    )
+
+    it(
+      'stops searching and reports an error when worker load fails',
+      async () => {
+        const { deps, sendWorkerMessage } =
+          createMockDeps()
+
+        const core = new EmojiSearchCore({
+          deps,
+          onStateChange: () => {},
+        })
+
+        await core.initialize()
+        core.classify('hello')
+
+        sendWorkerMessage({
+          status: 'error',
+          error:
+            'Search model failed to load. Reload the page and try again.',
+        })
+
+        await vi.waitFor(() =>
+          expect(core.isSearching).toBe(false)
+        )
+
+        expect(core.modelReady).toBe(false)
+        expect(core.errorMessage).toBe(
+          'Search model failed to load. Reload the page and try again.'
+        )
       }
     )
   })

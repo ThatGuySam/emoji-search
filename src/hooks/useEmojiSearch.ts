@@ -34,6 +34,8 @@ export interface EmojiSearchState {
   dbReady: boolean
   /** True when actively searching (show spinner) */
   isSearching: boolean
+  /** User-visible runtime error when search cannot proceed */
+  errorMessage: string | null
   /** Trigger a search query */
   classify: (text: string) => void
 }
@@ -74,9 +76,21 @@ const DEBOUNCE_DELAY_MS = 150
  * Message from the ML worker.
  */
 interface WorkerMessage {
-  status?: 'initiate' | 'ready' | 'complete'
+  status?:
+    | 'initiate'
+    | 'ready'
+    | 'complete'
+    | 'error'
   embedding?: number[]
+  error?: string
 }
+
+const DB_LOAD_ERROR =
+  'Search data failed to load. Reload the page and try again.'
+const SEARCH_LOAD_ERROR =
+  'Search model failed to load. Reload the page and try again.'
+const SEARCH_RUNTIME_ERROR =
+  'Search failed. Reload the page and try again.'
 
 /**
  * Core search logic extracted for testability.
@@ -88,12 +102,14 @@ export class EmojiSearchCore {
   modelReady = false
   dbReady = false
   isSearching = false
+  errorMessage: string | null = null
 
   // Internal
   private database: unknown = null
-  private dbReadyPromise: Promise<unknown> | null = null
+  private dbReadyPromise: Promise<unknown | null> | null =
+    null
   private dbReadyResolve:
-    | ((db: unknown) => void)
+    | ((db: unknown | null) => void)
     | null = null
   private worker: EmojiSearchDeps['createWorker'] extends
     () => infer W ? W : never
@@ -124,6 +140,8 @@ export class EmojiSearchCore {
    * Start loading DB and preloading model.
    */
   async initialize(options: { noCache?: boolean } = {}) {
+    this.errorMessage = null
+
     // Create promise for DB ready state
     this.dbReadyPromise = new Promise((resolve) => {
       this.dbReadyResolve = resolve
@@ -152,9 +170,17 @@ export class EmojiSearchCore {
       // Resolve promise for waiting queries
       if (this.dbReadyResolve) {
         this.dbReadyResolve(db)
+        this.dbReadyResolve = null
       }
     } catch (error) {
       console.error('DB load failed', error)
+      this.errorMessage = DB_LOAD_ERROR
+      this.isSearching = false
+      if (this.dbReadyResolve) {
+        this.dbReadyResolve(null)
+        this.dbReadyResolve = null
+      }
+      this.onStateChange()
     }
   }
 
@@ -179,27 +205,47 @@ export class EmojiSearchCore {
         this.onStateChange()
         return
 
+      case 'error':
+        this.modelReady = false
+        this.errorMessage =
+          message.error ?? SEARCH_LOAD_ERROR
+        this.isSearching = false
+        this.onStateChange()
+        return
+
       case 'complete': {
-        // Embedding complete, now search DB
-        // Wait for DB if not ready yet
-        let db = this.database
-        if (!db && this.dbReadyPromise) {
-          db = await this.dbReadyPromise
-        }
-        if (!db || !message.embedding) {
+        try {
+          // Embedding complete, now search DB
+          // Wait for DB if not ready yet
+          let db = this.database
+          if (!db && this.dbReadyPromise) {
+            db = await this.dbReadyPromise
+          }
+          if (!db || !message.embedding) {
+            if (!db && this.errorMessage === null) {
+              this.errorMessage = DB_LOAD_ERROR
+            }
+            this.isSearching = false
+            this.onStateChange()
+            return
+          }
+
+          const results = await this.deps.search(
+            db,
+            message.embedding
+          )
+          this.matched = results.map((r) => r.identifier)
+          this.errorMessage = null
+          this.isSearching = false
+          this.onStateChange()
+          return
+        } catch (error) {
+          console.error('Search failed', error)
+          this.errorMessage = SEARCH_RUNTIME_ERROR
           this.isSearching = false
           this.onStateChange()
           return
         }
-
-        const results = await this.deps.search(
-          db,
-          message.embedding
-        )
-        this.matched = results.map((r) => r.identifier)
-        this.isSearching = false
-        this.onStateChange()
-        return
       }
     }
   }
@@ -274,6 +320,7 @@ export class EmojiSearchCore {
       modelReady: this.modelReady,
       dbReady: this.dbReady,
       isSearching: this.isSearching,
+      errorMessage: this.errorMessage,
       classify: (text) => this.classify(text),
     }
   }

@@ -85,6 +85,7 @@ export function App() {
     classify,
     backend,
     backendError,
+    searchError,
   } = useEmojiSearch({
     noCache,
     searchConfig,
@@ -113,7 +114,8 @@ export function App() {
   const showResultsMeta =
     query.length > 0 ||
     results.length > 0 ||
-    isSearching;
+    isSearching ||
+    Boolean(searchError);
 
   useEffect(() => {
     /**
@@ -187,6 +189,15 @@ export function App() {
             ) : null}
           </div>
         ) : null}
+        {searchError ? (
+          <p
+            role="status"
+            aria-live="polite"
+            className="mb-3 text-sm text-amber-700"
+          >
+            {searchError}
+          </p>
+        ) : null}
         <ResultGrid
           results={results}
           onCopy={(x) => onCopy(x)}
@@ -246,6 +257,7 @@ function useEmojiSearch(options: {
     isSearching: false,
     backend: 'pglite' as SearchBackend,
     backendError: null as string | null,
+    searchError: null as string | null,
   });
 
   useEffect(() => {
@@ -325,6 +337,7 @@ function useEmojiSearch(options: {
           ...prev,
           matched: core.matched,
           isSearching: core.isSearching,
+          searchError: core.errorMessage,
         }));
       },
     });
@@ -356,6 +369,7 @@ function useEmojiSearch(options: {
     isSearching: state.isSearching,
     backend: state.backend,
     backendError: state.backendError,
+    searchError: state.searchError,
     classify,
   };
 }
