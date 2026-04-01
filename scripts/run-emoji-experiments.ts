@@ -7,16 +7,21 @@ import {
   buildEmojiIntentKeywordMap,
   experimentEmojiIntents,
 } from '../src/data/emojiIntents'
+import { curatedEditorialAliases } from '../src/data/curatedEditorialAliases'
 import { getEncoder } from '../src/utils/hf'
+import {
+  buildQueryVariantsForProfile,
+  formatDocumentForProfile,
+  getEmbeddingModelProfile,
+  type EmbeddingModelProfileId,
+} from '../src/utils/embeddingModelProfiles'
+import type { MultilingualExperimentQueryBundle } from '../src/utils/multilingualExperimentQueries'
+import { buildIntentPageEditorialKeywordMap } from './lib/intentPageEditorialKeywords'
 
 const RUN_DATE = new Date().toISOString().slice(0, 10)
 const OUTPUT_DIR = path.join(
   process.cwd(),
   'src/artifacts/experiments',
-)
-const OUTPUT_JSON = path.join(
-  OUTPUT_DIR,
-  `emoji-search-experiments-${RUN_DATE}.json`,
 )
 
 const VECTOR_LIMIT = 50
@@ -25,13 +30,24 @@ const AUTO_QUERY_LIMIT = 24
 const BATCH_SIZE = 64
 const RRF_K = 60
 
-type QuerySource = 'manual' | 'heldout'
+type Options = {
+  modelProfileId: EmbeddingModelProfileId
+  outputPath?: string
+  queryBundlePath?: string
+}
+
+type QuerySource =
+  | 'manual'
+  | 'heldout'
+  | 'localized'
 
 type QuerySpec = {
   id: string
   source: QuerySource
   query: string
   relevant: string[]
+  locale?: string
+  track?: string
 }
 
 type KeywordPair = {
@@ -45,6 +61,10 @@ type EmojiRecord = {
   trainHuman: string[]
   evalHuman: string[]
   trainTokens: string[]
+  editorialHuman: string[]
+  editorialTokens: string[]
+  curatedHuman: string[]
+  curatedTokens: string[]
   salientTokens: string[]
 }
 
@@ -53,6 +73,8 @@ type CorpusVariantId =
   | 'raw_keywords'
   | 'humanized_phrases'
   | 'humanized_plus_tokens'
+  | 'humanized_editorial_plus_tokens'
+  | 'humanized_curated_editorial_plus_tokens'
   | 'prompted_slim'
 
 type ScorerVariantId =
@@ -100,12 +122,14 @@ type QueryTrace = {
 
 type ExperimentResult = {
   id: string
+  modelProfile: EmbeddingModelProfileId
   corpus: CorpusVariantId
   scorer: ScorerVariantId
   metrics: {
     all: MetricSummary
     manual: MetricSummary
     heldout: MetricSummary
+    localized: MetricSummary
   }
   misses: QueryTrace[]
 }
@@ -124,6 +148,108 @@ type BM25Index = {
   docTerms: Map<string, number>[]
   docFreq: Map<string, number>
   avgDocLen: number
+}
+
+function parseArgs(argv: string[]): Options {
+  const args = argv.slice(2)
+  let modelProfileId: EmbeddingModelProfileId =
+    'gte_small_en'
+  let outputPath: string | undefined
+  let queryBundlePath: string | undefined
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]
+    const next = args[index + 1]
+
+    switch (arg) {
+      case '--model-profile':
+        if (
+          next !== 'gte_small_en' &&
+          next !== 'multilingual_e5_small'
+        ) {
+          throw new Error(
+            '--model-profile must be one of: gte_small_en, multilingual_e5_small',
+          )
+        }
+        modelProfileId = next
+        index += 1
+        break
+
+      case '--output':
+        if (!next) {
+          throw new Error(
+            'Missing value for --output',
+          )
+        }
+        outputPath = next
+        index += 1
+        break
+
+      case '--query-bundle':
+        if (!next) {
+          throw new Error(
+            'Missing value for --query-bundle',
+          )
+        }
+        queryBundlePath = next
+        index += 1
+        break
+
+      case '--help':
+        console.log(
+          [
+            'Usage: bun scripts/run-emoji-experiments.ts [options]',
+            '',
+            'Options:',
+            '  --model-profile <id>   One of: gte_small_en, multilingual_e5_small',
+            '  --output <path>        Override output artifact path',
+            '  --query-bundle <path>  Optional localized query bundle JSON',
+          ].join('\n'),
+        )
+        process.exit(0)
+
+      default:
+        throw new Error(`Unknown argument: ${arg}`)
+    }
+  }
+
+  return {
+    modelProfileId,
+    outputPath,
+    queryBundlePath,
+  }
+}
+
+function defaultOutputPath(
+  modelProfileId: EmbeddingModelProfileId,
+): string {
+  return path.join(
+    OUTPUT_DIR,
+    `emoji-search-experiments-${RUN_DATE}-${modelProfileId}.json`,
+  )
+}
+
+async function maybeLoadLocalizedQueries(
+  queryBundlePath?: string,
+): Promise<QuerySpec[]> {
+  if (!queryBundlePath) {
+    return []
+  }
+
+  const raw = await fs.readFile(
+    path.resolve(queryBundlePath),
+    'utf8',
+  )
+  const bundle = JSON.parse(raw) as MultilingualExperimentQueryBundle
+
+  return bundle.queries.map((query) => ({
+    id: query.id,
+    source: 'localized' as const,
+    query: query.query,
+    relevant: query.relevant,
+    locale: query.locale,
+    track: query.track,
+  }))
 }
 
 const MANUAL_QUERIES: QuerySpec[] = [
@@ -359,6 +485,14 @@ const CORPUS_VARIANTS: {
   { id: 'raw_keywords', label: 'raw emojilib keywords' },
   { id: 'humanized_phrases', label: 'humanized phrases' },
   { id: 'humanized_plus_tokens', label: 'humanized phrases plus split tokens' },
+  {
+    id: 'humanized_editorial_plus_tokens',
+    label: 'humanized phrases plus editorial aliases and split tokens',
+  },
+  {
+    id: 'humanized_curated_editorial_plus_tokens',
+    label: 'humanized phrases plus curated editorial aliases and split tokens',
+  },
   { id: 'prompted_slim', label: 'prompted salient phrases/tokens' },
 ]
 
@@ -441,7 +575,9 @@ function pickTrainEvalPairs(keywords: string[]): {
   }
 }
 
-function buildEmojiRecords(): EmojiRecord[] {
+function buildEmojiRecords(
+  editorialKeywordMap: Map<string, string[]>,
+): EmojiRecord[] {
   const intentKeywordMap =
     buildEmojiIntentKeywordMap(
       experimentEmojiIntents,
@@ -456,13 +592,33 @@ function buildEmojiRecords(): EmojiRecord[] {
         ...extraKeywords,
       ])
     const trainHuman = train.map((pair) => pair.human)
+    const editorialHuman = unique(
+      (editorialKeywordMap.get(emoji) ?? [])
+        .map(humanizeKeyword)
+        .filter(Boolean),
+    )
+    const curatedHuman = unique(
+      (curatedEditorialAliases.get(emoji) ?? [])
+        .map(humanizeKeyword)
+        .filter(Boolean),
+    )
     const trainTokens = unique(trainHuman.flatMap(tokenize))
+    const editorialTokens = unique(
+      editorialHuman.flatMap(tokenize),
+    )
+    const curatedTokens = unique(
+      curatedHuman.flatMap(tokenize),
+    )
     return {
       emoji,
       trainRaw: train.map((pair) => pair.raw),
       trainHuman,
       evalHuman: heldout.map((pair) => pair.human),
       trainTokens,
+      editorialHuman,
+      editorialTokens,
+      curatedHuman,
+      curatedTokens,
       salientTokens: [],
     }
   })
@@ -525,6 +681,20 @@ function buildCorpusText(
       return unique([
         ...record.trainHuman,
         ...record.trainTokens,
+      ]).join(', ')
+    case 'humanized_editorial_plus_tokens':
+      return unique([
+        ...record.trainHuman,
+        ...record.editorialHuman,
+        ...record.trainTokens,
+        ...record.editorialTokens,
+      ]).join(', ')
+    case 'humanized_curated_editorial_plus_tokens':
+      return unique([
+        ...record.trainHuman,
+        ...record.curatedHuman,
+        ...record.trainTokens,
+        ...record.curatedTokens,
       ]).join(', ')
     case 'prompted_slim': {
       const phrases = record.trainHuman.filter((phrase) =>
@@ -895,8 +1065,29 @@ function formatPercent(value: number): string {
 }
 
 async function main() {
+  const options = parseArgs(process.argv)
+  const modelProfile = getEmbeddingModelProfile(
+    options.modelProfileId,
+  )
+  const outputPath =
+    options.outputPath != null
+      ? path.resolve(options.outputPath)
+      : defaultOutputPath(modelProfile.id)
+
+  console.log(
+    `Model profile: ${modelProfile.id} (${modelProfile.modelId})`,
+  )
   console.log('Building emoji records...')
-  const initialRecords = buildEmojiRecords()
+  const editorialKeywordMap =
+    await buildIntentPageEditorialKeywordMap({
+      minConfidence: 'high',
+    })
+  console.log(
+    `Loaded high-confidence editorial aliases for ${editorialKeywordMap.size} emoji docs`,
+  )
+  const initialRecords = buildEmojiRecords(
+    editorialKeywordMap,
+  )
   const noiseTokens = buildNoiseTokens(initialRecords)
   const tokenDf = buildTokenDf(initialRecords)
   const records = withSalientTokens(initialRecords, noiseTokens)
@@ -906,19 +1097,35 @@ async function main() {
     noiseTokens,
     tokenDf,
   )
-  const queries = [...MANUAL_QUERIES, ...heldoutQueries]
+  const localizedQueries =
+    await maybeLoadLocalizedQueries(
+      options.queryBundlePath,
+    )
+  const queries = [
+    ...MANUAL_QUERIES,
+    ...heldoutQueries,
+    ...localizedQueries,
+  ]
 
   assertRelevantEmoji(records, queries)
 
   console.log(
     `Records: ${records.length}, manual queries: ${MANUAL_QUERIES.length}, heldout queries: ${heldoutQueries.length}`,
   )
+  console.log(
+    `Localized queries: ${localizedQueries.length}`,
+  )
 
-  const encoder = await getEncoder()
+  const encoder = await getEncoder({
+    modelId: modelProfile.modelId,
+    pipelineOptions: {
+      dtype: modelProfile.defaultDtype,
+    },
+  })
 
   const corpora = CORPUS_VARIANTS.map((variant) => ({
     id: variant.id,
-    docs: records.map((record) =>
+    rawDocs: records.map((record) =>
       buildCorpusText(record, variant.id),
     ),
   }))
@@ -927,13 +1134,22 @@ async function main() {
   const corpusIndexes: CorpusIndex[] = []
   for (const corpus of corpora) {
     console.log(`  corpus ${corpus.id}`)
-    const floatDocs = await encodeTexts(encoder, corpus.docs)
+    const encodedDocs = corpus.rawDocs.map((doc) =>
+      formatDocumentForProfile(
+        modelProfile,
+        doc,
+      ),
+    )
+    const floatDocs = await encodeTexts(
+      encoder,
+      encodedDocs,
+    )
     const int8Docs = floatDocs.map(quantizeInt8)
     const binaryDocs = floatDocs.map(quantizeBinary)
-    const tokenDocs = corpus.docs.map(tokenize)
+    const tokenDocs = corpus.rawDocs.map(tokenize)
     corpusIndexes.push({
       id: corpus.id,
-      docs: corpus.docs,
+      docs: corpus.rawDocs,
       tokens: tokenDocs,
       floatDocs,
       int8Docs,
@@ -943,17 +1159,21 @@ async function main() {
   }
 
   console.log('Encoding queries...')
-  const normalizedQueries = queries.map((query) => humanizeKeyword(query.query))
-  const promptedQueries = normalizedQueries.map(
-    (query) => `emoji for ${query}`,
+  const queryVariants = queries.map((query) =>
+    buildQueryVariantsForProfile(
+      modelProfile,
+      humanizeKeyword(query.query),
+    ),
   )
   const rawQueryEmbeddings = await encodeTexts(
     encoder,
-    normalizedQueries,
+    queryVariants.map((query) => query.raw),
   )
   const promptedQueryEmbeddings = await encodeTexts(
     encoder,
-    promptedQueries,
+    queryVariants.map(
+      (query) => query.prompted,
+    ),
   )
   const rawBinaryQueries = rawQueryEmbeddings.map(quantizeBinary)
 
@@ -1057,13 +1277,15 @@ async function main() {
         )
         if (!result) {
           result = {
-            id: `${corpus.id}__${scorer.id}`,
+            id: `${modelProfile.id}__${corpus.id}__${scorer.id}`,
+            modelProfile: modelProfile.id,
             corpus: corpus.id,
             scorer: scorer.id,
             metrics: {
               all: emptyMetricSummary(),
               manual: emptyMetricSummary(),
               heldout: emptyMetricSummary(),
+              localized: emptyMetricSummary(),
             },
             misses: [],
           }
@@ -1095,6 +1317,10 @@ async function main() {
       queries.filter((query) => query.source === 'heldout'),
       rankMap,
     )
+    result.metrics.localized = evaluateQueries(
+      queries.filter((query) => query.source === 'localized'),
+      rankMap,
+    )
     result.misses = result.misses.filter((trace) => {
       const relevant = new Set(trace.relevant)
       return !trace.top10.some((emoji) => relevant.has(emoji))
@@ -1115,23 +1341,31 @@ async function main() {
 
   const summary = rankedExperiments.slice(0, 10).map((result) => ({
     id: result.id,
+    modelProfile: result.modelProfile,
     corpus: result.corpus,
     scorer: result.scorer,
     all: compactMetrics(result.metrics.all),
     manual: compactMetrics(result.metrics.manual),
     heldout: compactMetrics(result.metrics.heldout),
+    localized: compactMetrics(result.metrics.localized),
   }))
 
-  await fs.mkdir(OUTPUT_DIR, { recursive: true })
+  await fs.mkdir(
+    path.dirname(outputPath),
+    { recursive: true },
+  )
   await fs.writeFile(
-    OUTPUT_JSON,
+    outputPath,
     JSON.stringify(
       {
         date: RUN_DATE,
+        modelProfile,
         corpusVariants: CORPUS_VARIANTS,
         scorerVariants: SCORER_VARIANTS,
         noiseTokens: Array.from(noiseTokens).sort(),
         queries,
+        localizedQueryBundlePath:
+          options.queryBundlePath ?? null,
         summary,
         results: rankedExperiments,
       },
@@ -1140,7 +1374,7 @@ async function main() {
     ),
   )
 
-  console.log(`Saved ${OUTPUT_JSON}`)
+  console.log(`Saved ${outputPath}`)
   console.log('Top experiments:')
   for (const result of rankedExperiments.slice(0, 10)) {
     console.log(
@@ -1150,6 +1384,7 @@ async function main() {
         `all Hit@3 ${formatPercent(result.metrics.all.hit3)}`,
         `manual Hit@3 ${formatPercent(result.metrics.manual.hit3)}`,
         `heldout Hit@10 ${formatPercent(result.metrics.heldout.hit10)}`,
+        `localized Hit@10 ${formatPercent(result.metrics.localized.hit10)}`,
       ].join(' | '),
     )
   }
