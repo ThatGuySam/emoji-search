@@ -56,7 +56,7 @@ export const GET: APIRoute = async () => {
     paths.add(
       buildLocalizedIntentRoute({
         localeSlug: locale.slug,
-        slug: entry.data.sourceSlug,
+        slug: entry.data.localizedSlug,
       }),
     )
   }

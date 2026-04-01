@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "delulu"
+localizedSlug: "डिलुलु"
 title: "delulu के लिए इमोजी"
 description: "मस्तीभरे delulu mood, self-aware optimism और chaotic confidence के लिए इमोजी।"
 query: "डिलुलु"

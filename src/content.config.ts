@@ -34,6 +34,7 @@ const localizedIntentPages = defineCollection({
   schema: z.object({
     locale: z.enum(['pt-BR', 'ja-JP', 'hi-IN']),
     sourceSlug: z.string(),
+    localizedSlug: z.string(),
     title: z.string(),
     description: z.string(),
     query: z.string(),

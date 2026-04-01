@@ -1,5 +1,7 @@
 /// <reference path="../worker-configuration.d.ts" />
 
+import { listLocalizedIntentSlugRedirects } from './lib/intentPageLocales';
+
 const ALLOWED = new Set([
   'https://fetchmoji.com',
   'https://seo-preview.fetchmoji.com',
@@ -15,6 +17,16 @@ const PROTECTED_PATHS = new Set([
 const CDN_ORIGIN = 'https://cdn.fetchmoji.com';
 const DB_PROXY_PREFIX = '/proxy/db/';
 const MODEL_PROXY_PREFIX = '/proxy/models/';
+const LOCALIZED_INTENT_REDIRECTS = new Map(
+  listLocalizedIntentSlugRedirects().flatMap(({ from, to }) => {
+    const normalizedFrom = from.endsWith('/') ? from : `${from}/`;
+    const bareFrom = normalizedFrom.slice(0, -1);
+    return [
+      [normalizedFrom, to],
+      [bareFrom, to],
+    ];
+  }),
+);
 
 function isProtectedPath(path: string) {
   for (const protectedPath of PROTECTED_PATHS) {
@@ -44,6 +56,18 @@ export default {
     PREVIEW_NOINDEX?: string;
   }) {
     const url = new URL(request.url);
+    const localizedRedirect =
+      request.method === 'GET' || request.method === 'HEAD'
+        ? LOCALIZED_INTENT_REDIRECTS.get(url.pathname)
+        : null;
+
+    if (localizedRedirect) {
+      return Response.redirect(
+        new URL(localizedRedirect, url),
+        308,
+      );
+    }
+
     const origin = request.headers.get('Origin');
     const allowed = origin && ALLOWED.has(origin);
     const proxyTarget = getProxyTarget(url.pathname);

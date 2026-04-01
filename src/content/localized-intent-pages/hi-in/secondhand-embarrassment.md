@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "secondhand-embarrassment"
+localizedSlug: "दूसरों-की-वजह-से-शर्म"
 title: "दूसरों की वजह से शर्म के लिए इमोजी"
 description: "secondhand embarrassment और 'देखा नहीं जा रहा' वाले रिएक्शन के लिए इमोजी।"
 query: "दूसरों की वजह से शर्म"

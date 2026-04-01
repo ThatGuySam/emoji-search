@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "proud-of-you"
+localizedSlug: "orgulho-de-voce"
 title: "Emoji para orgulho de você"
 description: "Emojis de apoio para encorajamento, celebração e elogio com carinho."
 query: "orgulho de você"

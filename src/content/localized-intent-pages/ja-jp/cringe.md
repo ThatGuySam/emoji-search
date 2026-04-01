@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "cringe"
+localizedSlug: "痛い"
 title: "痛いときの絵文字"
 description: "見ていてつらい、ちょっと痛い、そんな反応を出したいときの絵文字です。"
 query: "痛い"

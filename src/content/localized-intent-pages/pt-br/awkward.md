@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "awkward"
+localizedSlug: "constrangedor"
 title: "Emoji para situação constrangedora"
 description: "Use o emoji certo quando o clima fica estranho, tenso ou socialmente desconfortável."
 query: "constrangedor"

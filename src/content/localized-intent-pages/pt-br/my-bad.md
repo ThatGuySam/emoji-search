@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "my-bad"
+localizedSlug: "foi-mal"
 title: "Emoji para foi mal"
 description: "Emojis de pedido de desculpa para momentos de 'foi mal' em conversas casuais ou de trabalho."
 query: "foi mal"

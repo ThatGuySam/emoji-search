@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "thinking-of-you"
+localizedSlug: "तुम्हारी-याद"
 title: "तुम्हारी याद आ रही है के लिए इमोजी"
 description: "care messages, check-ins और हल्के emotional support के लिए warm इमोजी।"
 query: "तुम्हारी याद आ रही है"

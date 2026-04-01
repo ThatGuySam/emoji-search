@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "secondhand-embarrassment"
+localizedSlug: "vergonha-alheia"
 title: "Emoji para vergonha alheia"
 description: "Sugestões de emoji para vergonha alheia e reações de 'não dá para ver'."
 query: "vergonha alheia"

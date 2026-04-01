@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "awkward"
+localizedSlug: "अटपटा"
 title: "अटपटे पल के लिए इमोजी"
 description: "जब माहौल अजीब, टेंशन भरा या socially awkward हो जाए, तब सही इमोजी चुनें।"
 query: "अजीब सा"

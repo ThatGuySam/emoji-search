@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "yikes"
+localizedSlug: "हाय-राम"
 title: "हाय राम वाले पल के लिए इमोजी"
 description: "हल्की घबराहट, चिंता और social shock दिखाने के लिए expressive इमोजी।"
 query: "हाय राम"

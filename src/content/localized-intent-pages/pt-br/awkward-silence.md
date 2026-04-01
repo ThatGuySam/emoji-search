@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "awkward-silence"
+localizedSlug: "silencio-constrangedor"
 title: "Emoji para silêncio constrangedor"
 description: "Melhores opções de emoji para silêncio constrangedor em mensagens, grupos e replies."
 query: "silêncio constrangedor"

@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "yikes"
+localizedSlug: "やばい"
 title: "やばい時の絵文字"
 description: "軽いパニック、不安、空気の悪さを出したい時に使いやすい絵文字です。"
 query: "やばい"

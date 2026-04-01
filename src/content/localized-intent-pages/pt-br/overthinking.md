@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "overthinking"
+localizedSlug: "pensando-demais"
 title: "Emoji para pensar demais"
 description: "Comunique overthinking, espiral mental e análise demais com escolhas melhores de emoji."
 query: "pensando demais"

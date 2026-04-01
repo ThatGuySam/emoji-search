@@ -22,6 +22,11 @@ export type IntentPageLocale = {
   relatedPagesHeading: string
 }
 
+export type LocalizedIntentSlugMap = Record<
+  IntentPageLocaleSlug,
+  Record<string, string>
+>
+
 const INTENT_PAGE_LOCALES: readonly IntentPageLocale[] = [
   {
     code: 'pt-BR',
@@ -73,6 +78,45 @@ const INTENT_PAGE_LOCALES: readonly IntentPageLocale[] = [
   },
 ] as const
 
+const LOCALIZED_INTENT_SLUGS: LocalizedIntentSlugMap = {
+  'pt-br': {
+    'awkward-silence': 'silencio-constrangedor',
+    awkward: 'constrangedor',
+    cringe: 'cringe',
+    delulu: 'delulu',
+    'my-bad': 'foi-mal',
+    overthinking: 'pensando-demais',
+    'proud-of-you': 'orgulho-de-voce',
+    'secondhand-embarrassment': 'vergonha-alheia',
+    'thinking-of-you': 'pensando-em-voce',
+    yikes: 'eita',
+  },
+  'ja-jp': {
+    'awkward-silence': '気まずい沈黙',
+    awkward: '気まずい',
+    cringe: '痛い',
+    delulu: '妄想モード',
+    'my-bad': 'ごめん',
+    overthinking: '考えすぎ',
+    'proud-of-you': '誇らしい',
+    'secondhand-embarrassment': '見てられない',
+    'thinking-of-you': '気にかけてる',
+    yikes: 'やばい',
+  },
+  'hi-in': {
+    'awkward-silence': 'अजीब-चुप्पी',
+    awkward: 'अटपटा',
+    cringe: 'क्रिंज',
+    delulu: 'डिलुलु',
+    'my-bad': 'मेरी-गलती',
+    overthinking: 'ज़्यादा-सोचना',
+    'proud-of-you': 'तुम-पर-गर्व-है',
+    'secondhand-embarrassment': 'दूसरों-की-वजह-से-शर्म',
+    'thinking-of-you': 'तुम्हारी-याद',
+    yikes: 'हाय-राम',
+  },
+}
+
 export function listIntentPageLocales() {
   return [...INTENT_PAGE_LOCALES]
 }
@@ -106,23 +150,84 @@ export function buildLocalizedIntentRoute(options: {
   return `/emoji-for/${options.localeSlug}/${options.slug}/`
 }
 
+export function buildLegacyLocalizedIntentRoute(options: {
+  localeSlug: IntentPageLocaleSlug
+  sourceSlug: string
+}) {
+  return buildLocalizedIntentRoute({
+    localeSlug: options.localeSlug,
+    slug: options.sourceSlug,
+  })
+}
+
+export function getLocalizedIntentSlug(options: {
+  localeSlug: IntentPageLocaleSlug
+  sourceSlug: string
+}) {
+  return (
+    LOCALIZED_INTENT_SLUGS[options.localeSlug]?.[
+      options.sourceSlug
+    ] ?? null
+  )
+}
+
+export function buildLocalizedIntentRouteForSource(options: {
+  localeSlug: IntentPageLocaleSlug
+  sourceSlug: string
+}) {
+  return buildLocalizedIntentRoute({
+    localeSlug: options.localeSlug,
+    slug:
+      getLocalizedIntentSlug(options) ??
+      options.sourceSlug,
+  })
+}
+
+export function listLocalizedIntentSlugRedirects() {
+  return (
+    Object.entries(LOCALIZED_INTENT_SLUGS) as Array<
+      [IntentPageLocaleSlug, Record<string, string>]
+    >
+  ).flatMap(([localeSlug, slugs]) =>
+    Object.entries(slugs).flatMap(
+      ([sourceSlug, localizedSlug]) => {
+        if (localizedSlug === sourceSlug) {
+          return []
+        }
+        return [
+          {
+            from: buildLegacyLocalizedIntentRoute({
+              localeSlug,
+              sourceSlug,
+            }),
+            to: buildLocalizedIntentRoute({
+              localeSlug,
+              slug: localizedSlug,
+            }),
+          },
+        ]
+      },
+    ),
+  )
+}
+
 export function buildIntentPageAlternates(
-  slug: string,
+  sourceSlug: string,
 ) {
   return [
     {
       hreflang: 'x-default',
-      href: `/emoji-for/${slug}/`,
+      href: `/emoji-for/${sourceSlug}/`,
     },
     {
       hreflang: 'en',
-      href: `/emoji-for/${slug}/`,
+      href: `/emoji-for/${sourceSlug}/`,
     },
     ...INTENT_PAGE_LOCALES.map((locale) => ({
       hreflang: locale.code,
-      href: buildLocalizedIntentRoute({
+      href: buildLocalizedIntentRouteForSource({
         localeSlug: locale.slug,
-        slug,
+        sourceSlug,
       }),
     })),
   ]

@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "cringe"
+localizedSlug: "cringe"
 title: "Emoji para cringe"
 description: "Expresse desconforto e vergonha alheia sem exagerar no tom."
 query: "cringe"

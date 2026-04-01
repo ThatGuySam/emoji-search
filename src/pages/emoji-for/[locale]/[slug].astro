@@ -70,7 +70,7 @@ export async function getStaticPaths() {
     return {
       params: {
         locale: locale.slug,
-        slug: entry.data.sourceSlug,
+        slug: entry.data.localizedSlug,
       },
       props: {
         entry,
@@ -99,7 +99,7 @@ if (!locale) {
 const { Content } = await entry.render()
 const canonicalPath = buildLocalizedIntentRoute({
   localeSlug: locale.slug,
-  slug: entry.data.sourceSlug,
+  slug: entry.data.localizedSlug,
 })
 
 function getLeadEmojiForSlug(sourceSlug: string) {
@@ -171,7 +171,7 @@ function getLeadEmojiForSlug(sourceSlug: string) {
                     data-related-intent-link
                     href={buildLocalizedIntentRoute({
                       localeSlug: locale.slug,
-                      slug: related.data.sourceSlug,
+                      slug: related.data.localizedSlug,
                     })}
                   >
                     <h3 class="flex items-center gap-2 text-sm font-medium text-foreground" data-related-intent-label>

@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "yikes"
+localizedSlug: "eita"
 title: "Emoji para eita"
 description: "Ache emojis expressivos para leve pânico, preocupação e choque social."
 query: "eita"

@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "thinking-of-you"
+localizedSlug: "気にかけてる"
 title: "気にかけている時の絵文字"
 description: "やさしい気づかい、近況確認、そっと寄り添う気持ちに合う絵文字です。"
 query: "気にかけてる"

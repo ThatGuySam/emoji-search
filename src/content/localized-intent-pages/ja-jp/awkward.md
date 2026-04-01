@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "awkward"
+localizedSlug: "気まずい"
 title: "気まずいときの絵文字"
 description: "空気が変になったときや微妙な緊張を伝えたいときの絵文字を選びやすくします。"
 query: "気まずい"

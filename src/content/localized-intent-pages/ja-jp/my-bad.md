@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "my-bad"
+localizedSlug: "ごめん"
 title: "ごめんの絵文字"
 description: "軽い謝罪から少し丁寧な詫びまで使いやすい絵文字をまとめました。"
 query: "ごめん"

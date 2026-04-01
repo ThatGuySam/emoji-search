@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "awkward-silence"
+localizedSlug: "अजीब-चुप्पी"
 title: "अजीब चुप्पी के लिए इमोजी"
 description: "जब चैट में अजीब चुप्पी आ जाए, तब काम आने वाले सही इमोजी यहां देखें।"
 query: "अजीब चुप्पी"

@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "cringe"
+localizedSlug: "क्रिंज"
 title: "क्रिंज के लिए इमोजी"
 description: "हल्की शर्मिंदगी, असहजता और 'ये देखना मुश्किल है' वाले रिएक्शन के लिए इमोजी।"
 query: "क्रिंज"

@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "overthinking"
+localizedSlug: "考えすぎ"
 title: "考えすぎの絵文字"
 description: "考えすぎ、思考のぐるぐる、判断疲れを伝えるときの絵文字です。"
 query: "考えすぎ"

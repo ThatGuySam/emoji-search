@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "proud-of-you"
+localizedSlug: "誇らしい"
 title: "誇らしい気持ちを伝える絵文字"
 description: "励まし、祝福、やさしい称賛に合うサポート系の絵文字をまとめました。"
 query: "誇らしい"

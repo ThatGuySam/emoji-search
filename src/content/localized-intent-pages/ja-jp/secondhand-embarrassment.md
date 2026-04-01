@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "secondhand-embarrassment"
+localizedSlug: "見てられない"
 title: "見ていてつらい時の絵文字"
 description: "二次的な気まずさや『見ていられない』感じを表す絵文字を探せます。"
 query: "見てられない"

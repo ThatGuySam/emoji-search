@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "delulu"
+localizedSlug: "妄想モード"
 title: "delulu の絵文字"
 description: "自覚ありの妄想モードや、遊びの強気テンションに合う絵文字を探せます。"
 query: "delulu"

@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "overthinking"
+localizedSlug: "ज़्यादा-सोचना"
 title: "ज़्यादा सोचने के लिए इमोजी"
 description: "overthinking, दिमागी चक्कर और analysis paralysis दिखाने के लिए बेहतर इमोजी चुनें।"
 query: "ज़्यादा सोचना"

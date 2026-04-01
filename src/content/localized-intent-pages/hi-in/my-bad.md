@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "my-bad"
+localizedSlug: "मेरी-गलती"
 title: "मेरी गलती के लिए इमोजी"
 description: "casual apology से लेकर थोड़ा sincere sorry तक, सही इमोजी यहां मिलेंगे।"
 query: "मेरी गलती"

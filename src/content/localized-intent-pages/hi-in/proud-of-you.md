@@ -1,6 +1,7 @@
 ---
 locale: "hi-IN"
 sourceSlug: "proud-of-you"
+localizedSlug: "तुम-पर-गर्व-है"
 title: "तुम पर गर्व है के लिए इमोजी"
 description: "encouragement, celebration और दिल से की गई तारीफ के लिए supportive इमोजी।"
 query: "तुम पर गर्व है"

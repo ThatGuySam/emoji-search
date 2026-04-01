@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "thinking-of-you"
+localizedSlug: "pensando-em-voce"
 title: "Emoji para pensando em você"
 description: "Emojis carinhosos para check-ins, mensagens de cuidado e apoio emocional leve."
 query: "pensando em você"

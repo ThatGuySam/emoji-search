@@ -1,6 +1,7 @@
 ---
 locale: "ja-JP"
 sourceSlug: "awkward-silence"
+localizedSlug: "気まずい沈黙"
 title: "気まずい沈黙の絵文字"
 description: "気まずい沈黙をやわらげたいときに使いやすい絵文字をまとめました。"
 query: "気まずい沈黙"

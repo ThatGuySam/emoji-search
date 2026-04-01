@@ -1,6 +1,7 @@
 ---
 locale: "pt-BR"
 sourceSlug: "delulu"
+localizedSlug: "delulu"
 title: "Emoji para delulu"
 description: "Ache emojis delulu para otimismo irônico, caos divertido e confiança exagerada."
 query: "delulu"
