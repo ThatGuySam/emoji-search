@@ -3,12 +3,15 @@ import { env, pipeline } from '@huggingface/transformers'
 import { describe, expect, it } from 'vitest'
 
 import {
-  DATA_TYPE,
   DEFAULT_DIMENSIONS,
-  DEFAULT_MODEL,
   MODEL_REVISION,
 } from '../src/constants'
 import { defaultPipelineOptions } from '../src/utils/hf'
+import {
+  buildQueryVariantsForProfile,
+  getEmbeddingModelProfile,
+  type EmbeddingModelProfileId,
+} from '../src/utils/embeddingModelProfiles'
 
 type QueryMeasurement = {
   query: string
@@ -17,6 +20,9 @@ type QueryMeasurement = {
 }
 
 type BenchmarkMetrics = {
+  modelProfileId: EmbeddingModelProfileId
+  modelId: string
+  dtype: string
   userAgent: string
   remoteHost: string
   coldInitMs: number
@@ -34,6 +40,19 @@ const QUERIES = [
   'sad crying',
   'thinking hard',
 ]
+
+const rawProfileId =
+  import.meta.env.VITE_BENCH_PROFILE_ID
+const modelProfileId: EmbeddingModelProfileId =
+  rawProfileId === 'multilingual_e5_small'
+    ? 'multilingual_e5_small'
+    : 'gte_small_en'
+const modelProfile = getEmbeddingModelProfile(
+  modelProfileId,
+)
+const benchDtype =
+  import.meta.env.VITE_BENCH_DTYPE ||
+  modelProfile.defaultDtype
 
 function roundMs(value: number): number {
   return Number(value.toFixed(1))
@@ -95,9 +114,9 @@ describe('transformers browser benchmark', () => {
       const coldInitStart = performance.now()
       const coldEncoder = await pipeline(
         'feature-extraction',
-        DEFAULT_MODEL,
+        modelProfile.modelId,
         defaultPipelineOptions({
-          dtype: DATA_TYPE,
+          dtype: benchDtype,
           revision: MODEL_REVISION,
         }),
       )
@@ -107,7 +126,10 @@ describe('transformers browser benchmark', () => {
 
       const coldEncode = await measureQuery({
         encoder: coldEncoder,
-        query: QUERIES[0]!,
+        query: buildQueryVariantsForProfile(
+          modelProfile,
+          QUERIES[0]!,
+        ).raw,
       })
 
       await coldEncoder.dispose()
@@ -115,9 +137,9 @@ describe('transformers browser benchmark', () => {
       const warmInitStart = performance.now()
       const warmEncoder = await pipeline(
         'feature-extraction',
-        DEFAULT_MODEL,
+        modelProfile.modelId,
         defaultPipelineOptions({
-          dtype: DATA_TYPE,
+          dtype: benchDtype,
           revision: MODEL_REVISION,
         }),
       )
@@ -130,7 +152,10 @@ describe('transformers browser benchmark', () => {
         warmEncodes.push(
           await measureQuery({
             encoder: warmEncoder,
-            query,
+            query: buildQueryVariantsForProfile(
+              modelProfile,
+              query,
+            ).raw,
           })
         )
       }
@@ -139,6 +164,9 @@ describe('transformers browser benchmark', () => {
         (entry) => entry.elapsedMs,
       )
       const metrics: BenchmarkMetrics = {
+        modelProfileId: modelProfile.id,
+        modelId: modelProfile.modelId,
+        dtype: benchDtype,
         userAgent: navigator.userAgent,
         remoteHost: env.remoteHost,
         coldInitMs,

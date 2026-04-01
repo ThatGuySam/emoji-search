@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2026-04-01T23:39:23.714Z",
+  "locale": "hi-IN",
+  "source": "src/content/localized-intent-pages/hi-in",
+  "generator": {
+    "model": "published-localized-pages",
+    "script": "scripts/build-multilingual-drafts-from-pages.ts",
+    "embeddingGemmaModel": null,
+    "dryRun": false
+  },
+  "records": [
+    {
+      "id": "bridge_awkward_silence",
+      "slug": "awkward-silence",
+      "localizedSlug": "अजीब-चुप्पी",
+      "localizedQuery": "अजीब चुप्पी",
+      "localizedAltQueries": [],
+      "localizedTitle": "अजीब चुप्पी के लिए इमोजी",
+      "localizedMetaDescription": "जब चैट में अजीब चुप्पी आ जाए, तब काम आने वाले सही इमोजी यहां देखें।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_awkward",
+      "slug": "awkward",
+      "localizedSlug": "अटपटा",
+      "localizedQuery": "अजीब सा",
+      "localizedAltQueries": [],
+      "localizedTitle": "अटपटे पल के लिए इमोजी",
+      "localizedMetaDescription": "जब माहौल अजीब, टेंशन भरा या socially awkward हो जाए, तब सही इमोजी चुनें।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_cringe",
+      "slug": "cringe",
+      "localizedSlug": "क्रिंज",
+      "localizedQuery": "क्रिंज",
+      "localizedAltQueries": [],
+      "localizedTitle": "क्रिंज के लिए इमोजी",
+      "localizedMetaDescription": "हल्की शर्मिंदगी, असहजता और 'ये देखना मुश्किल है' वाले रिएक्शन के लिए इमोजी।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_delulu",
+      "slug": "delulu",
+      "localizedSlug": "डिलुलु",
+      "localizedQuery": "डिलुलु",
+      "localizedAltQueries": [],
+      "localizedTitle": "delulu के लिए इमोजी",
+      "localizedMetaDescription": "मस्तीभरे delulu mood, self-aware optimism और chaotic confidence के लिए इमोजी।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_my_bad",
+      "slug": "my-bad",
+      "localizedSlug": "मेरी-गलती",
+      "localizedQuery": "मेरी गलती",
+      "localizedAltQueries": [],
+      "localizedTitle": "मेरी गलती के लिए इमोजी",
+      "localizedMetaDescription": "casual apology से लेकर थोड़ा sincere sorry तक, सही इमोजी यहां मिलेंगे।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_overthinking",
+      "slug": "overthinking",
+      "localizedSlug": "ज़्यादा-सोचना",
+      "localizedQuery": "ज़्यादा सोचना",
+      "localizedAltQueries": [],
+      "localizedTitle": "ज़्यादा सोचने के लिए इमोजी",
+      "localizedMetaDescription": "overthinking, दिमागी चक्कर और analysis paralysis दिखाने के लिए बेहतर इमोजी चुनें।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_proud_of_you",
+      "slug": "proud-of-you",
+      "localizedSlug": "तुम-पर-गर्व-है",
+      "localizedQuery": "तुम पर गर्व है",
+      "localizedAltQueries": [],
+      "localizedTitle": "तुम पर गर्व है के लिए इमोजी",
+      "localizedMetaDescription": "encouragement, celebration और दिल से की गई तारीफ के लिए supportive इमोजी।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_secondhand_embarrassment",
+      "slug": "secondhand-embarrassment",
+      "localizedSlug": "दूसरों-की-वजह-से-शर्म",
+      "localizedQuery": "दूसरों की वजह से शर्म",
+      "localizedAltQueries": [],
+      "localizedTitle": "दूसरों की वजह से शर्म के लिए इमोजी",
+      "localizedMetaDescription": "secondhand embarrassment और 'देखा नहीं जा रहा' वाले रिएक्शन के लिए इमोजी।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_thinking_of_you",
+      "slug": "thinking-of-you",
+      "localizedSlug": "तुम्हारी-याद",
+      "localizedQuery": "तुम्हारी याद आ रही है",
+      "localizedAltQueries": [],
+      "localizedTitle": "तुम्हारी याद आ रही है के लिए इमोजी",
+      "localizedMetaDescription": "care messages, check-ins और हल्के emotional support के लिए warm इमोजी।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_yikes",
+      "slug": "yikes",
+      "localizedSlug": "हाय-राम",
+      "localizedQuery": "हाय राम",
+      "localizedAltQueries": [],
+      "localizedTitle": "हाय राम वाले पल के लिए इमोजी",
+      "localizedMetaDescription": "हल्की घबराहट, चिंता और social shock दिखाने के लिए expressive इमोजी।",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    }
+  ]
+}

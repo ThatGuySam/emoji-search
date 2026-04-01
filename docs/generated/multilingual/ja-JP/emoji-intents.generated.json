@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2026-04-01T23:39:23.713Z",
+  "locale": "ja-JP",
+  "source": "src/content/localized-intent-pages/ja-jp",
+  "generator": {
+    "model": "published-localized-pages",
+    "script": "scripts/build-multilingual-drafts-from-pages.ts",
+    "embeddingGemmaModel": null,
+    "dryRun": false
+  },
+  "records": [
+    {
+      "id": "bridge_awkward_silence",
+      "slug": "awkward-silence",
+      "localizedSlug": "気まずい沈黙",
+      "localizedQuery": "気まずい沈黙",
+      "localizedAltQueries": [],
+      "localizedTitle": "気まずい沈黙の絵文字",
+      "localizedMetaDescription": "気まずい沈黙をやわらげたいときに使いやすい絵文字をまとめました。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_awkward",
+      "slug": "awkward",
+      "localizedSlug": "気まずい",
+      "localizedQuery": "気まずい",
+      "localizedAltQueries": [],
+      "localizedTitle": "気まずいときの絵文字",
+      "localizedMetaDescription": "空気が変になったときや微妙な緊張を伝えたいときの絵文字を選びやすくします。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_cringe",
+      "slug": "cringe",
+      "localizedSlug": "痛い",
+      "localizedQuery": "痛い",
+      "localizedAltQueries": [],
+      "localizedTitle": "痛いときの絵文字",
+      "localizedMetaDescription": "見ていてつらい、ちょっと痛い、そんな反応を出したいときの絵文字です。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_delulu",
+      "slug": "delulu",
+      "localizedSlug": "妄想モード",
+      "localizedQuery": "delulu",
+      "localizedAltQueries": [],
+      "localizedTitle": "delulu の絵文字",
+      "localizedMetaDescription": "自覚ありの妄想モードや、遊びの強気テンションに合う絵文字を探せます。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_my_bad",
+      "slug": "my-bad",
+      "localizedSlug": "ごめん",
+      "localizedQuery": "ごめん",
+      "localizedAltQueries": [],
+      "localizedTitle": "ごめんの絵文字",
+      "localizedMetaDescription": "軽い謝罪から少し丁寧な詫びまで使いやすい絵文字をまとめました。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_overthinking",
+      "slug": "overthinking",
+      "localizedSlug": "考えすぎ",
+      "localizedQuery": "考えすぎ",
+      "localizedAltQueries": [],
+      "localizedTitle": "考えすぎの絵文字",
+      "localizedMetaDescription": "考えすぎ、思考のぐるぐる、判断疲れを伝えるときの絵文字です。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_proud_of_you",
+      "slug": "proud-of-you",
+      "localizedSlug": "誇らしい",
+      "localizedQuery": "誇らしい",
+      "localizedAltQueries": [],
+      "localizedTitle": "誇らしい気持ちを伝える絵文字",
+      "localizedMetaDescription": "励まし、祝福、やさしい称賛に合うサポート系の絵文字をまとめました。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_secondhand_embarrassment",
+      "slug": "secondhand-embarrassment",
+      "localizedSlug": "見てられない",
+      "localizedQuery": "見てられない",
+      "localizedAltQueries": [],
+      "localizedTitle": "見ていてつらい時の絵文字",
+      "localizedMetaDescription": "二次的な気まずさや『見ていられない』感じを表す絵文字を探せます。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_thinking_of_you",
+      "slug": "thinking-of-you",
+      "localizedSlug": "気にかけてる",
+      "localizedQuery": "気にかけてる",
+      "localizedAltQueries": [],
+      "localizedTitle": "気にかけている時の絵文字",
+      "localizedMetaDescription": "やさしい気づかい、近況確認、そっと寄り添う気持ちに合う絵文字です。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_yikes",
+      "slug": "yikes",
+      "localizedSlug": "やばい",
+      "localizedQuery": "やばい",
+      "localizedAltQueries": [],
+      "localizedTitle": "やばい時の絵文字",
+      "localizedMetaDescription": "軽いパニック、不安、空気の悪さを出したい時に使いやすい絵文字です。",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    }
+  ]
+}

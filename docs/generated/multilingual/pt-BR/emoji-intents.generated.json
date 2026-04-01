@@ -1,0 +1,133 @@
+{
+  "generatedAt": "2026-04-01T23:39:23.712Z",
+  "locale": "pt-BR",
+  "source": "src/content/localized-intent-pages/pt-br",
+  "generator": {
+    "model": "published-localized-pages",
+    "script": "scripts/build-multilingual-drafts-from-pages.ts",
+    "embeddingGemmaModel": null,
+    "dryRun": false
+  },
+  "records": [
+    {
+      "id": "bridge_awkward_silence",
+      "slug": "awkward-silence",
+      "localizedSlug": "silencio-constrangedor",
+      "localizedQuery": "silêncio constrangedor",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para silêncio constrangedor",
+      "localizedMetaDescription": "Melhores opções de emoji para silêncio constrangedor em mensagens, grupos e replies.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_awkward",
+      "slug": "awkward",
+      "localizedSlug": "constrangedor",
+      "localizedQuery": "constrangedor",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para situação constrangedora",
+      "localizedMetaDescription": "Use o emoji certo quando o clima fica estranho, tenso ou socialmente desconfortável.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_cringe",
+      "slug": "cringe",
+      "localizedSlug": "cringe",
+      "localizedQuery": "cringe",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para cringe",
+      "localizedMetaDescription": "Expresse desconforto e vergonha alheia sem exagerar no tom.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_delulu",
+      "slug": "delulu",
+      "localizedSlug": "delulu",
+      "localizedQuery": "delulu",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para delulu",
+      "localizedMetaDescription": "Ache emojis delulu para otimismo irônico, caos divertido e confiança exagerada.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_my_bad",
+      "slug": "my-bad",
+      "localizedSlug": "foi-mal",
+      "localizedQuery": "foi mal",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para foi mal",
+      "localizedMetaDescription": "Emojis de pedido de desculpa para momentos de 'foi mal' em conversas casuais ou de trabalho.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_overthinking",
+      "slug": "overthinking",
+      "localizedSlug": "pensando-demais",
+      "localizedQuery": "pensando demais",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para pensar demais",
+      "localizedMetaDescription": "Comunique overthinking, espiral mental e análise demais com escolhas melhores de emoji.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_proud_of_you",
+      "slug": "proud-of-you",
+      "localizedSlug": "orgulho-de-voce",
+      "localizedQuery": "orgulho de você",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para orgulho de você",
+      "localizedMetaDescription": "Emojis de apoio para encorajamento, celebração e elogio com carinho.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_secondhand_embarrassment",
+      "slug": "secondhand-embarrassment",
+      "localizedSlug": "vergonha-alheia",
+      "localizedQuery": "vergonha alheia",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para vergonha alheia",
+      "localizedMetaDescription": "Sugestões de emoji para vergonha alheia e reações de 'não dá para ver'.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "social_thinking_of_you",
+      "slug": "thinking-of-you",
+      "localizedSlug": "pensando-em-voce",
+      "localizedQuery": "pensando em você",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para pensando em você",
+      "localizedMetaDescription": "Emojis carinhosos para check-ins, mensagens de cuidado e apoio emocional leve.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    },
+    {
+      "id": "bridge_yikes",
+      "slug": "yikes",
+      "localizedSlug": "eita",
+      "localizedQuery": "eita",
+      "localizedAltQueries": [],
+      "localizedTitle": "Emoji para eita",
+      "localizedMetaDescription": "Ache emojis expressivos para leve pânico, preocupação e choque social.",
+      "translationNotes": "Derived from the published localized intent page.",
+      "reviewFlags": [],
+      "confidence": 0.95
+    }
+  ]
+}
