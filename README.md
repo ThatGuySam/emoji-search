@@ -122,6 +122,22 @@ pnpm build
 pnpm preview
 ```
 
+Post-deploy verification:
+
+```bash
+CHECK_BASE_URL=https://seo-preview.fetchmoji.com pnpm check:postdeploy
+```
+
+Run that after each deploy. It checks homepage autofocus and search readiness,
+verifies the global `Cmd/Ctrl+K` launcher flow, exercises the new intent-page
+quick-copy UI, watches for browser-side asset/CORS failures, and saves
+screenshots under `docs/verification/screenshots/post-deploy/`.
+
+Important: the search stack now loads large DB/model assets through worker
+proxy routes such as `/proxy/db/...` and `/proxy/models/...`. Plain
+`astro preview` does not emulate those worker routes, so use the deployed
+preview domain or a worker-backed dev environment for end-to-end search checks.
+
 Seed helper (optional for scripts that prepare artifacts):
 
 ```bash
