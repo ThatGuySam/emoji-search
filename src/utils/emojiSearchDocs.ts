@@ -1,5 +1,7 @@
 import Emojilib from 'emojilib'
 
+import { buildEmojiIntentKeywordMap } from '../data/emojiIntents'
+
 export type EmojiSearchDoc = {
   emoji: string
   content: string
@@ -32,10 +34,17 @@ function tokenize(text: string): string[] {
  * humanized phrases + deduped split tokens.
  */
 export function buildEmojiSearchDocs(): EmojiSearchDoc[] {
+  const intentKeywordMap = buildEmojiIntentKeywordMap()
+
   return Object.entries(Emojilib as Record<string, string[]>)
     .map(([emoji, keywords]) => {
+      const extraKeywords =
+        intentKeywordMap.get(emoji) ?? []
       const humanized = unique(
-        keywords
+        [
+          ...keywords,
+          ...extraKeywords,
+        ]
           .map(humanizeKeyword)
           .filter(Boolean),
       )
