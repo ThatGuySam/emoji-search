@@ -29,7 +29,23 @@ const supportPages = defineCollection({
   }),
 })
 
+const localizedIntentPages = defineCollection({
+  type: 'content',
+  schema: z.object({
+    locale: z.enum(['pt-BR', 'ja-JP', 'hi-IN']),
+    sourceSlug: z.string(),
+    title: z.string(),
+    description: z.string(),
+    query: z.string(),
+    intentId: z.string(),
+    h1: z.string(),
+    ctaLabel: z.string(),
+    relatedSlugs: z.array(z.string()).min(2),
+  }),
+})
+
 export const collections = {
   'intent-pages': intentPages,
   'support-pages': supportPages,
+  'localized-intent-pages': localizedIntentPages,
 }

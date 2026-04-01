@@ -1,0 +1,191 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content'
+
+import EmojiQuickCopy from '../../../components/EmojiQuickCopy.astro'
+import Layout from '../../../layouts/Layout.astro'
+import {
+  emojiIntents,
+  getEmojiIntentBySlug,
+  getEmojiIntentLeadEmoji,
+} from '../../../data/emojiIntents'
+import {
+  buildIntentPageAlternates,
+  buildLocalizedIntentHubRoute,
+  buildLocalizedIntentRoute,
+  getIntentPageLocaleByCode,
+  getIntentPageLocaleBySlug,
+} from '../../../lib/intentPageLocales'
+
+type LocalizedIntentEntry = CollectionEntry<'localized-intent-pages'>
+
+type PageProps = {
+  entry: LocalizedIntentEntry
+  localeSlug: string
+  relevantEmoji: string[]
+  leadEmoji: string
+  relatedEntries: LocalizedIntentEntry[]
+}
+
+export async function getStaticPaths() {
+  const entries = await getCollection(
+    'localized-intent-pages',
+  )
+
+  return entries.map((entry) => {
+    const locale = getIntentPageLocaleByCode(
+      entry.data.locale,
+    )
+    const intent =
+      emojiIntents.find(
+        (item) =>
+          item.id === entry.data.intentId ||
+          item.slug === entry.data.sourceSlug,
+      ) ?? null
+
+    if (!locale) {
+      throw new Error(
+        `Localized page "${entry.slug}" references unsupported locale "${entry.data.locale}".`,
+      )
+    }
+
+    if (!intent || intent.id !== entry.data.intentId) {
+      throw new Error(
+        `Localized page "${entry.slug}" references unknown intent id "${entry.data.intentId}".`,
+      )
+    }
+
+    const relatedEntries = entry.data.relatedSlugs
+      .map((relatedSlug) =>
+        entries.find(
+          (candidate) =>
+            candidate.data.locale === entry.data.locale &&
+            candidate.data.sourceSlug === relatedSlug,
+        ),
+      )
+      .filter(
+        (candidate): candidate is LocalizedIntentEntry =>
+          candidate != null,
+      )
+
+    return {
+      params: {
+        locale: locale.slug,
+        slug: entry.data.sourceSlug,
+      },
+      props: {
+        entry,
+        localeSlug: locale.slug,
+        relevantEmoji: [...intent.relevant],
+        leadEmoji: getEmojiIntentLeadEmoji(intent),
+        relatedEntries,
+      } satisfies PageProps,
+    }
+  })
+}
+
+const {
+  entry,
+  localeSlug,
+  relevantEmoji,
+  leadEmoji,
+  relatedEntries,
+} = Astro.props as PageProps
+const locale = getIntentPageLocaleBySlug(localeSlug)
+
+if (!locale) {
+  throw new Error(`Unknown locale slug "${localeSlug}"`)
+}
+
+const { Content } = await entry.render()
+const canonicalPath = buildLocalizedIntentRoute({
+  localeSlug: locale.slug,
+  slug: entry.data.sourceSlug,
+})
+
+function getLeadEmojiForSlug(sourceSlug: string) {
+  const intent = getEmojiIntentBySlug(sourceSlug)
+  return intent ? getEmojiIntentLeadEmoji(intent) : '🔎'
+}
+---
+
+<Layout
+  title={entry.data.title}
+  description={entry.data.description}
+  canonicalPath={canonicalPath}
+  lang={locale.code}
+  alternates={buildIntentPageAlternates(entry.data.sourceSlug)}
+>
+  <main class="mx-auto max-w-3xl px-4 pb-16 pt-20 md:pt-24">
+    <nav class="mb-4 text-sm text-muted-foreground">
+      <a
+        href={buildLocalizedIntentHubRoute(locale.slug)}
+        class="no-underline hover:underline"
+      >
+        {locale.nativeLabel}
+      </a>
+      <span class="mx-2">/</span>
+      <span>{entry.data.query}</span>
+    </nav>
+
+    <article class="space-y-7">
+      <EmojiQuickCopy
+        emojis={relevantEmoji}
+        eyebrow={`${locale.fastPickLabel} ${entry.data.query}`}
+        description={locale.fastPickDescription}
+      />
+
+      <header class="space-y-3">
+        <h1 class="flex items-start gap-3 text-3xl font-semibold leading-tight">
+          <span aria-hidden="true" class="text-4xl leading-none">{leadEmoji}</span>
+          <span>{entry.data.h1}</span>
+        </h1>
+        <p class="text-muted-foreground">{entry.data.description}</p>
+      </header>
+
+      <section class="space-y-4 text-base leading-7">
+        <Content />
+      </section>
+
+      <section class="rounded-2xl border border-border bg-card p-4">
+        <h2 class="text-base font-medium">{locale.tryExactHeading}</h2>
+        <p class="mt-2 text-sm text-muted-foreground">
+          {locale.tryExactDescription}
+        </p>
+        <a
+          class="mt-4 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground no-underline"
+          href="/"
+        >
+          {entry.data.ctaLabel}
+        </a>
+      </section>
+
+      {
+        relatedEntries.length > 0 ? (
+          <section>
+            <h2 class="text-base font-medium">{locale.relatedPagesHeading}</h2>
+            <div class="mt-3 grid gap-3 md:grid-cols-2">
+              {
+                relatedEntries.map((related) => (
+                  <a
+                    class="rounded-xl border border-border bg-card p-3 no-underline transition hover:border-primary/40"
+                    data-related-intent-link
+                    href={buildLocalizedIntentRoute({
+                      localeSlug: locale.slug,
+                      slug: related.data.sourceSlug,
+                    })}
+                  >
+                    <h3 class="flex items-center gap-2 text-sm font-medium text-foreground" data-related-intent-label>
+                      <span aria-hidden="true" data-related-intent-emoji>{getLeadEmojiForSlug(related.data.sourceSlug)}</span>
+                      <span>{related.data.query}</span>
+                    </h3>
+                    <p class="mt-1 text-sm text-muted-foreground">{related.data.description}</p>
+                  </a>
+                ))
+              }
+            </div>
+          </section>
+        ) : null
+      }
+    </article>
+  </main>
+</Layout>

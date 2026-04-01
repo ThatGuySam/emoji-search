@@ -5,10 +5,11 @@ import EmojiQuickCopy from '../../components/EmojiQuickCopy.astro'
 import Layout from '../../layouts/Layout.astro'
 import {
   emojiIntents,
+  getEmojiIntentRoute,
   getEmojiIntentBySlug,
   getEmojiIntentLeadEmoji,
-  getEmojiIntentRoute,
 } from '../../data/emojiIntents'
+import { buildIntentPageAlternates } from '../../lib/intentPageLocales'
 
 type IntentEntry = CollectionEntry<'intent-pages'>
 
@@ -86,6 +87,7 @@ function getLeadEmojiForSlug(slug: string) {
 	title={entry.data.title}
 	description={entry.data.description}
 	canonicalPath={canonicalPath}
+	alternates={buildIntentPageAlternates(entry.slug)}
 >
 	<main class="mx-auto max-w-3xl px-4 pb-16 pt-20 md:pt-24">
 		<nav class="mb-4 text-sm text-muted-foreground">

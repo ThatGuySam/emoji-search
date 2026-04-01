@@ -28,6 +28,10 @@ type Props = {
 	noindex?: boolean;
 	robots?: string;
 	lang?: string;
+	alternates?: Array<{
+		hreflang: string;
+		href: string;
+	}>;
 };
 
 const props = Astro.props as Props;
@@ -43,6 +47,15 @@ const canonicalUrl = new URL(
 const robotsDirective =
 	props.robots ??
 	(props.noindex ? 'noindex, nofollow' : 'index, follow');
+const alternates = (props.alternates ?? []).map(
+	(alternate) => ({
+		...alternate,
+		href: new URL(
+			normalizePath(alternate.href),
+			SITE_META.url,
+		).toString(),
+	}),
+);
 ---
 <!doctype html>
 <html lang={props.lang ?? 'en'} class="dark">
@@ -60,6 +73,15 @@ const robotsDirective =
 		<meta name="apple-mobile-web-app-title" content={SITE_META.name} />
 		<meta name="robots" content={robotsDirective} />
 		<link rel="canonical" href={canonicalUrl} />
+		{
+			alternates.map((alternate) => (
+				<link
+					rel="alternate"
+					hreflang={alternate.hreflang}
+					href={alternate.href}
+				/>
+			))
+		}
 
 		<meta property="og:type" content="website" />
 		<meta property="og:site_name" content={SITE_META.name} />

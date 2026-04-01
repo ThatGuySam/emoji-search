@@ -1,0 +1,93 @@
+---
+import { getCollection } from 'astro:content'
+
+import Layout from '../../../layouts/Layout.astro'
+import {
+  getEmojiIntentBySlug,
+  getEmojiIntentLeadEmoji,
+} from '../../../data/emojiIntents'
+import {
+  buildIntentHubAlternates,
+  buildLocalizedIntentHubRoute,
+  buildLocalizedIntentRoute,
+  getIntentPageLocaleBySlug,
+  listIntentPageLocales,
+} from '../../../lib/intentPageLocales'
+
+type LocalizedEntry = Awaited<
+  ReturnType<typeof getCollection<'localized-intent-pages'>>
+>[number]
+
+type PageProps = {
+  localeSlug: string
+}
+
+export async function getStaticPaths() {
+  return listIntentPageLocales().map((locale) => ({
+    params: {
+      locale: locale.slug,
+    },
+    props: {
+      localeSlug: locale.slug,
+    } satisfies PageProps,
+  }))
+}
+
+const { localeSlug } = Astro.props as PageProps
+const locale = getIntentPageLocaleBySlug(localeSlug)
+
+if (!locale) {
+  throw new Error(`Unknown locale slug "${localeSlug}"`)
+}
+
+const entries = (await getCollection(
+  'localized-intent-pages',
+)).filter(
+  (entry) => entry.data.locale === locale.code,
+).sort((left, right) =>
+  left.data.query.localeCompare(right.data.query),
+)
+
+function getLeadEmojiForSlug(sourceSlug: string) {
+  const intent = getEmojiIntentBySlug(sourceSlug)
+  return intent ? getEmojiIntentLeadEmoji(intent) : '🔎'
+}
+---
+
+<Layout
+  title={locale.hubTitle}
+  description={locale.hubDescription}
+  canonicalPath={buildLocalizedIntentHubRoute(locale.slug)}
+  lang={locale.code}
+  alternates={buildIntentHubAlternates()}
+>
+  <main class="mx-auto max-w-3xl px-4 pb-12 pt-24">
+    <header class="space-y-3">
+      <p class="text-sm uppercase tracking-[0.16em] text-muted-foreground">{locale.hubEyebrow}</p>
+      <h1 class="text-3xl font-semibold leading-tight">{locale.hubTitle}</h1>
+      <p class="max-w-2xl text-muted-foreground">
+        {locale.hubDescription}
+      </p>
+    </header>
+
+    <section class="mt-8 grid gap-4 md:grid-cols-2">
+      {
+        entries.map((entry) => (
+          <a
+            class="rounded-2xl border border-border bg-card p-4 no-underline transition hover:border-primary/40 hover:bg-card/80"
+            href={buildLocalizedIntentRoute({
+              localeSlug: locale.slug,
+              slug: entry.data.sourceSlug,
+            })}
+          >
+            <h2 class="flex items-center gap-2 text-lg font-medium text-foreground">
+              <span aria-hidden="true">{getLeadEmojiForSlug(entry.data.sourceSlug)}</span>
+              <span>{entry.data.query}</span>
+            </h2>
+            <p class="mt-2 text-sm text-muted-foreground">{entry.data.description}</p>
+          </a>
+        ))
+      }
+    </section>
+  </main>
+</Layout>
