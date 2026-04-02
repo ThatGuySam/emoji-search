@@ -69,6 +69,45 @@ describe('buildEmojiSearchDocs', () => {
     expect(thinking!.keywords).toEqual(
       expect.arrayContaining([
         'overthinking',
+        'analysis paralysis',
+        'thinking too much',
+      ]),
+    )
+    expect(thinking!.tokens).toEqual(
+      expect.arrayContaining([
+        'analysis',
+        'paralysis',
+      ]),
+    )
+  })
+
+  it('injects curated editorial aliases into the shipped corpus', () => {
+    const grimace = findDoc('😬')
+    const hidingFace = findDoc('🫣')
+    const bow = findDoc('🙇')
+
+    expect(grimace).toBeDefined()
+    expect(grimace!.keywords).toEqual(
+      expect.arrayContaining([
+        'awkward moment',
+        'social tension',
+        'hard to watch',
+      ]),
+    )
+
+    expect(hidingFace).toBeDefined()
+    expect(hidingFace!.keywords).toEqual(
+      expect.arrayContaining([
+        'i cant watch',
+        'secondhand embarrassment',
+      ]),
+    )
+
+    expect(bow).toBeDefined()
+    expect(bow!.keywords).toEqual(
+      expect.arrayContaining([
+        'my fault',
+        'serious apology',
       ]),
     )
   })

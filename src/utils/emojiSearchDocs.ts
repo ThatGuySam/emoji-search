@@ -1,6 +1,7 @@
 import Emojilib from 'emojilib'
 
 import { buildEmojiIntentKeywordMap } from '../data/emojiIntents'
+import { curatedEditorialAliases } from '../data/curatedEditorialAliases'
 
 export type EmojiSearchDoc = {
   emoji: string
@@ -40,10 +41,13 @@ export function buildEmojiSearchDocs(): EmojiSearchDoc[] {
     .map(([emoji, keywords]) => {
       const extraKeywords =
         intentKeywordMap.get(emoji) ?? []
+      const curatedKeywords =
+        curatedEditorialAliases.get(emoji) ?? []
       const humanized = unique(
         [
           ...keywords,
           ...extraKeywords,
+          ...curatedKeywords,
         ]
           .map(humanizeKeyword)
           .filter(Boolean),

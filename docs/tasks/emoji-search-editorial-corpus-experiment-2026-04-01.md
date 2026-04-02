@@ -61,15 +61,15 @@ Plan source:
 
 ## Task 07: Promotion gate for shipped corpus
 
-- Status: `pending`
+- Status: `completed`
 - Outcome: a clear go/no-go decision exists for whether any editorial aliases
-  should be added to the shipped browser corpus.
+  should be added to the shipped browser corpus, and the curated alias winner
+  has been merged into the production corpus builder.
 - Write scope: `src/utils/emojiSearchDocs.ts`,
   `src/utils/emojiSearchDocs.test.ts`, `scripts/build-sqlite-db.ts`,
   `docs/verification/**`.
 - Verification: `pnpm test --run src/utils/emojiSearchDocs.test.ts`,
-  `bun scripts/run-emoji-experiments.ts`, optional `pnpm seed:sqlite` if the
-  experiment wins.
+  `bun scripts/run-emoji-experiments.ts`, `pnpm seed:sqlite`.
 
 ## Task 08: Candidate-source expansion after a win
 

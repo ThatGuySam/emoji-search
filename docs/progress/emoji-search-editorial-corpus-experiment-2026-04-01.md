@@ -2,7 +2,7 @@
 
 Date: 2026-04-01
 
-Status: `in progress`
+Status: `complete`
 
 - Executed the next `agent-workflow` loop after planning and task slicing.
 - Tightened the intent-page editorial extractor so it now keeps only
@@ -21,12 +21,17 @@ Status: `in progress`
   `src/artifacts/experiments/emoji-search-experiments-2026-04-01-gte_small_en.json`.
 - The curated alias variant is the first experiment in this lane to beat the
   `humanized_plus_tokens` control on both vector-only and hybrid retrieval.
-- No editorial aliases have been promoted into the shipped browser corpus yet.
+- Merged the curated alias source into the shipped corpus builder in
+  `src/utils/emojiSearchDocs.ts`.
+- Rebuilt the shipped SQLite artifact at `public/db/emoji-search.sqlite`.
+- Saved a post-promotion verification artifact to
+  `src/artifacts/experiments/emoji-search-experiments-2026-04-01-gte_small_en-post-promo.json`.
 
 ## Current Read
 
 - The tighter filter was directionally correct.
 - The extracted editorial corpus is still weaker than the control.
-- The curated alias corpus is strong enough to open the promotion gate.
-- The next useful move is to review whether the curated alias winner should be
-  merged into the shipped corpus builder.
+- The curated alias corpus was strong enough to open the promotion gate.
+- The curated alias winner is now merged into the shipped corpus builder.
+- The next useful move is to learn from future outside-demand or real-user data
+  before broadening the curated alias set further.

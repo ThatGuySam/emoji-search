@@ -12,6 +12,12 @@ Status: `verified`
   - status: `passed`
 - `bun scripts/run-emoji-experiments.ts`
   - status: `passed`
+- `pnpm test --run src/utils/emojiSearchDocs.test.ts src/data/curatedEditorialAliases.test.ts src/utils/intentPageEditorialKeywords.test.ts`
+  - status: `passed`
+- `bun scripts/run-emoji-experiments.ts --model-profile gte_small_en --output src/artifacts/experiments/emoji-search-experiments-2026-04-01-gte_small_en-post-promo.json`
+  - status: `passed`
+- `pnpm seed:sqlite`
+  - status: `passed`
 
 ## Artifacts
 
@@ -23,6 +29,9 @@ Status: `verified`
   `src/artifacts/experiments/emoji-search-experiments-2026-04-01.json`
   `src/artifacts/experiments/emoji-search-experiments-2026-04-01-gte_small_en.json`
   `src/artifacts/experiments/emoji-search-experiments-2026-04-01-gte_small_en-google-suggest.json`
+  `src/artifacts/experiments/emoji-search-experiments-2026-04-01-gte_small_en-post-promo.json`
+- shipped corpus:
+  `public/db/emoji-search.sqlite`
 
 ## What Was Verified
 
@@ -204,6 +213,30 @@ Interpretation:
 - This makes the promotion review for curated aliases materially easier to
   justify.
 
+### Promotion verification
+
+Production corpus merge:
+
+- `src/utils/emojiSearchDocs.ts` now includes
+  `src/data/curatedEditorialAliases.ts` when building shipped search docs.
+- `src/utils/emojiSearchDocs.test.ts` now asserts that curated aliases are
+  present in production docs for representative emoji such as `😬`, `🫣`, `🙇`,
+  and `🤔`.
+- `pnpm seed:sqlite` rebuilt `public/db/emoji-search.sqlite` successfully.
+
+Post-promotion experiment check:
+
+- `gte_small_en__humanized_curated_editorial_plus_tokens__vector_float_raw`
+  remained at `57.05%` all `nDCG@10`
+- `gte_small_en__humanized_curated_editorial_plus_tokens__hybrid_rrf_equal`
+  remained the top run at `58.91%` all `nDCG@10`
+
+Interpretation:
+
+- The promoted source is stable under the same experiment gate that justified
+  the decision.
+- The weaker extracted-editorial alias path is still not the thing to ship.
+
 ## Conclusion
 
 The experiment is set up, running, and now has a cleaner second-pass filter.
@@ -211,5 +244,5 @@ The experiment is set up, running, and now has a cleaner second-pass filter.
 The extracted editorial corpus variant should **not** be promoted into the
 shipped SQLite/browser corpus yet.
 
-The curated alias corpus variant is now strong enough to justify a separate
-promotion review into the shipped search corpus.
+The curated alias corpus variant cleared the promotion review and is now merged
+into the shipped search corpus.
