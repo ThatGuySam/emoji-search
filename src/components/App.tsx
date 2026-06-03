@@ -83,7 +83,6 @@ export function App() {
     matched,
     isSearching,
     classify,
-    backend,
     backendError,
     searchError,
   } = useEmojiSearch({
@@ -179,9 +178,6 @@ export function App() {
         {showResultsMeta ? (
           <div className="text-sm font-medium text-muted-foreground mb-2">
             Results
-            <span className="ml-2 text-xs font-normal uppercase tracking-wide">
-              {backend}
-            </span>
             {backendError ? (
               <span className="ml-2 text-xs font-normal text-amber-700">
                 fallback

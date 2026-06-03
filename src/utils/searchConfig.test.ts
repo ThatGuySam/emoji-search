@@ -5,9 +5,9 @@ import {
 } from './searchConfig'
 
 describe('resolveSearchConfig', () => {
-  it('defaults to pglite', () => {
+  it('defaults to sqlite', () => {
     expect(resolveSearchConfig('').backend)
-      .toBe('pglite')
+      .toBe('sqlite')
   })
 
   it('enables sqlite from query string', () => {

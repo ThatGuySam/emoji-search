@@ -46,7 +46,10 @@ export function resolveSearchConfig(
     requestedBackend === 'sqlite' &&
     sqliteExperimentEnabled
       ? 'sqlite'
-      : 'pglite'
+      : requestedBackend == null &&
+          sqliteExperimentEnabled
+        ? 'sqlite'
+        : 'pglite'
 
   return {
     backend,
