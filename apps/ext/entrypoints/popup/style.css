@@ -1,0 +1,262 @@
+:root {
+  color-scheme: light dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --background: #f7f5ff;
+  --surface: #ffffff;
+  --text: #1e1830;
+  --muted: #655d78;
+  --line: #d8d2e8;
+  --accent: #6c42d9;
+  --accent-strong: #4f28b5;
+  --focus: #1b69d2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-width: 23.75rem;
+  min-height: 31rem;
+  background: var(--background);
+  color: var(--text);
+}
+
+body {
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(a, button, input):focus-visible {
+  outline: 0.1875rem solid var(--focus);
+  outline-offset: 0.125rem;
+}
+
+main {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.app-header,
+.results-heading,
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.2rem;
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: 1.65rem;
+  letter-spacing: -0.04em;
+}
+
+h2 {
+  font-size: 0.9rem;
+}
+
+.brand-mark {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border-radius: 0.9rem;
+  background: linear-gradient(145deg, #8257e5, #4d27b4);
+  color: #ffffff;
+  font-size: 1.65rem;
+  box-shadow: 0 0.5rem 1.5rem rgb(79 40 181 / 20%);
+}
+
+search {
+  display: grid;
+  gap: 0.45rem;
+}
+
+label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+input {
+  width: 100%;
+  min-height: 2.8rem;
+  border: 0.0625rem solid var(--line);
+  border-radius: 0.8rem;
+  padding: 0.7rem 0.8rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.empty-state {
+  min-height: 13rem;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  border: 0.0625rem dashed var(--line);
+  border-radius: 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.results-heading {
+  margin-bottom: 0.5rem;
+  color: var(--muted);
+}
+
+.results-heading span {
+  font-size: 0.78rem;
+}
+
+.results {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 16rem;
+  margin: 0;
+  padding: 0.2rem;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.result {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 2.35rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
+  border: 0.0625rem solid var(--line);
+  border-radius: 0.85rem;
+  padding: 0.65rem 0.7rem;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.result:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--surface) 88%, var(--accent) 12%);
+}
+
+.emoji {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.result-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+
+.result-copy strong,
+.result-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-copy strong {
+  font-size: 0.88rem;
+  text-transform: capitalize;
+}
+
+.result-copy span,
+.copy-hint,
+footer,
+.status {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.copy-hint {
+  font-weight: 700;
+}
+
+.manual-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.manual-copy input {
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.status {
+  min-height: 1.1rem;
+  color: var(--accent-strong);
+  font-weight: 650;
+}
+
+footer {
+  padding-top: 0.75rem;
+  border-top: 0.0625rem solid var(--line);
+}
+
+footer a {
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  width: 0.0625rem !important;
+  height: 0.0625rem !important;
+  margin: -0.0625rem !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #15111f;
+    --surface: #211a30;
+    --text: #f5f1ff;
+    --muted: #b9aecf;
+    --line: #4c415f;
+    --accent: #ad8cff;
+    --accent-strong: #c5adff;
+    --focus: #7fb7ff;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "@fetchmoji/ext",
+  "description": "Find and copy the right emoji from a phrase you type.",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "pnpm compile && pnpm test && pnpm build && pnpm zip",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "emojilib": "^4.0.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@wxt-dev/module-react": "^1.1.5",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16",
+    "wxt": "^0.20.27"
+  }
+}
