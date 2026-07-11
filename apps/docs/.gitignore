@@ -1,0 +1,14 @@
+# build output
+dist/
+.astro/
+
+# deps
+node_modules/
+
+# cloudflare / wrangler
+.wrangler/
+
+# env
+.env
+.env.*
+!.env.example

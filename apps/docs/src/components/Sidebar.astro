@@ -1,0 +1,21 @@
+---
+import MobileMenuFooter from "virtual:starlight/components/MobileMenuFooter"
+/**
+ * Sidebar override — identical to Starlight's default Sidebar except it renders
+ * VisibilitySublist (which tags private entries with data-private) instead of the
+ * stock SidebarSublist. Register via `components.Sidebar` in astro.config.mjs.
+ * Reusable across the docs fleet; visibility is frontmatter-driven.
+ */
+import SidebarPersister from "@astrojs/starlight/components/SidebarPersister.astro"
+import VisibilitySublist from "./docs-auth/VisibilitySublist.astro"
+
+const { sidebar } = Astro.locals.starlightRoute
+---
+
+<SidebarPersister>
+  <VisibilitySublist sublist={sidebar} />
+</SidebarPersister>
+
+<div class="md:sl-hidden">
+  <MobileMenuFooter />
+</div>

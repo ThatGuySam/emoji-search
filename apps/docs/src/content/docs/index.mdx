@@ -1,0 +1,61 @@
+---
+title: FetchMoji
+description: The reviewable growth spec for FetchMoji's search experience, discovery pages, privacy boundary, agent visibility, and browser extension.
+# Open to the internet. Everything else is private by default (gated by the auth
+# Worker). Promote a page with `public: true`. See references/deploy.md.
+public: true
+head:
+  - tag: title
+    content: "FetchMoji — growth spec"
+template: splash
+hero:
+  tagline: Find the right emoji from the words you actually mean—privately, quickly, and wherever you write.
+  actions:
+    - text: Read the introduction
+      link: /overview/introduction/
+      icon: right-arrow
+      variant: primary
+    - text: See the roadmap
+      link: /project/roadmap/
+      icon: open-book
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## SBC4
+
+- `Tease:` Review the next FetchMoji growth iteration before implementation.
+- `Lede:` The site joins product behavior, search discovery, privacy, extension distribution, and their source research in one spec.
+- `Why it matters:` The live product already works, but the planned changes cross boundaries that can easily drift when handled separately.
+- `Go deeper:` Start with the Introduction, inspect the Roadmap, and use the Research section to audit the evidence.
+
+:::note[The product is live; this growth iteration is planned]
+[FetchMoji](https://fetchmoji.com/) already provides private, client-side emoji
+search. These docs describe the reviewed target state for the next growth
+iteration as if it works. Features marked _Planned_ are not claims about the
+current site. The machine-readable spec lives at
+[`/llms-full.txt`](/llms-full.txt).
+:::
+
+<CardGrid>
+  <Card title="What it is" icon="information">
+    A natural-language emoji finder for people who know the feeling or message
+    they want to send but not the emoji's official name.
+  </Card>
+  <Card title="How it works" icon="setting">
+    Search and ranking stay on the device. Crawlable intent pages answer common
+    phrase decisions, and a low-permission extension brings the same search into
+    the writing workflow.
+  </Card>
+</CardGrid>
+
+## Start here
+
+<CardGrid>
+  <LinkCard title="Introduction" href="/overview/introduction/" description="What it is and the problem it solves." />
+  <LinkCard title="Who it's for" href="/overview/who-its-for/" description="The real audience." />
+  <LinkCard title="How it works" href="/overview/how-it-works/" description="The flow, end to end." />
+  <LinkCard title="Growth research" href="/research/fetchmoji-growth-seo-agent-search-channels-2026-07-11/" description="The live audit and channel evidence behind this spec." />
+  <LinkCard title="Roadmap" href="/project/roadmap/" description="What ships first, and in what order." />
+</CardGrid>

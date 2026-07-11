@@ -1,0 +1,78 @@
+---
+title: Tech stack
+description: FetchMoji separates crawlable static answers, local search runtime, extension packaging, and private docs into explicit delivery surfaces.
+---
+
+## SBC4
+
+- `Tease:` Four delivery surfaces share one search contract without sharing one release cycle.
+- `Lede:` Crawlable HTML, a local worker runtime, a Manifest V3 extension, and the private docs spec stay explicit and independently deployable.
+- `Why it matters:` The architecture preserves privacy while fixing cold-start and distribution constraints.
+- `Go deeper:` Review runtime boundaries, release constraints, and the open performance budget.
+
+## Delivery surfaces
+
+| Surface | Responsibility | Target implementation |
+| --- | --- | --- |
+| `fetchmoji.com` | Public search and intent pages | Astro static/server-rendered HTML with a client search island |
+| Search runtime | Query ranking and local artifacts | Web Worker, compact initial artifact, lazy full local corpus, clipboard adapter |
+| Browser extension | Repeated writing workflow | WXT + TypeScript + React, Chrome Manifest V3 popup/command, production ZIP |
+| Docs spec | Review and build context | Astro Starlight at `fetchmoji.docs.samcarlton.com` with `/llms-full.txt` |
+| Edge | Static delivery and crawler policy | Cloudflare assets, immutable hashed files, sitemap, robots, and explicit headers |
+
+## Runtime boundaries
+
+The public HTML is useful before JavaScript runs. The homepage contains product
+proof and intent links; phrase pages contain their complete reviewed answer.
+
+Interactive search initializes in a worker. The UI owns input and readiness, so
+hydration or artifact work cannot discard text. A compact artifact supplies the
+first useful candidates; heavier local data loads only when needed and remains
+cacheable across visits.
+
+No default search endpoint receives query text. The website and extension share
+typed request/result contracts and versioned artifacts so ranking behavior can
+be tested across both surfaces.
+
+The search/ranking package remains independent of Astro, React, and WXT. The
+website and extension can package different initial data artifacts when size or
+startup evidence requires it, but both declare the same schema and ranking
+compatibility. The extension bundles every executable JavaScript and WebAssembly
+file; a remotely fetched model or index is inert, immutable data only.
+
+## Build and release constraints
+
+- Every artifact is content-addressed or carries a version plus checksum.
+- The website can deploy content without forcing an extension release.
+- An extension package declares compatible artifact/schema versions.
+- The product repository maintains `CHROMEWEBSTORE.md` as the reviewed source
+  for purpose, permission, privacy, remote-code, listing, and reviewer facts.
+- WXT development permissions are never allowed to leak into the production
+  manifest or ZIP.
+- Intent pages build only from reviewed records.
+- Production release checks cover cold search readiness, offline repeat use,
+  canonical/hreflang integrity, crawler responses, and observed network privacy.
+- The docs spec changes with any product contract change; docs are not a test
+  substitute.
+
+## Extension verification stack
+
+- **Unit:** deterministic search, ranking, locale, schema, and artifact tests.
+- **Component:** popup states, keyboard behavior, focus, and live-region output.
+- **Browser:** production-build E2E in Chrome using Playwright or Puppeteer,
+  including clean install, copy, reopen, offline repeat use, update, and removal.
+- **Lifecycle:** forced service-worker termination when a worker exists.
+- **Policy:** manifest-to-code permission map, network trace, remote-code scan,
+  dependency and secret scan, and exact ZIP inventory.
+- **Submission:** trusted-test package, human-reviewed `CHROMEWEBSTORE.md`, store
+  assets, reviewer steps, rollback package, and release provenance.
+
+## Performance strategy
+
+The current live audit observed a 3.95 MB SQLite request and roughly 4.76 MB of
+transferred resources in one unthrottled cold mobile-browser run. The target
+architecture treats startup bytes and initialization as product constraints.
+
+The final performance budget remains an open project decision, but the system
+must measure time from first input to first useful result on cold and repeat
+loads, including low-end mobile and slow-network profiles.

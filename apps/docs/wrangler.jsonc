@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "fetchmoji",
+  "account_id": "8d4ef8fe891f53e5658d3fdd5a4c7630",
+  "compatibility_date": "2026-07-11",
+  // Hono auth gate (worker/index.ts) fronts the static assets. run_worker_first
+  // makes it run before any asset is served, so private-by-default gating applies
+  // to every request — including the HTML and /llms*.txt. See references/deploy.md.
+  "main": "worker/index.ts",
+  "workers_dev": false,
+  "routes": [{ "pattern": "fetchmoji.docs.samcarlton.com", "custom_domain": true }],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true,
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  },
+  "vars": {
+    // Empty = host-only login cookie (fine on a single workers.dev host). Set to
+    // e.g. ".docs.example.com" to share one login across a custom-domain fleet.
+    "COOKIE_DOMAIN": ".docs.samcarlton.com",
+    "SESSION_TTL_DAYS": "365"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

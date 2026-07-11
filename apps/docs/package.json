@@ -1,0 +1,26 @@
+{
+  "name": "@fetchmoji/docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "FetchMoji — product documentation site (Astro Starlight). Docs-as-spec; the product is described here as planned, not yet built.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build && node scripts/build-visibility-manifest.mjs",
+    "preview": "astro preview",
+    "deploy": "bun run build && wrangler deploy"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.40.0",
+    "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource-variable/geist-mono": "^5.2.6",
+    "astro": "^6.4.7",
+    "hono": "^4.9.0",
+    "starlight-llms-txt": "^0.10.0"
+  },
+  "devDependencies": {
+    "gray-matter": "^4.0.3",
+    "wrangler": "^4.54.0"
+  }
+}

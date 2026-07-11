@@ -1,0 +1,215 @@
+/*
+ * Docs-as-spec theme — Emil Kowalski / Linear-flavored.
+ *
+ * Philosophy (emil-design-eng): content-first, restrained motion, unseen details.
+ * Only transform/opacity animate; custom ease-out curves; :active feedback;
+ * reduced-motion + hover guards. This is a docs site, so motion stays minimal.
+ *
+ * Recolor by editing --sl-color-accent (and its low/high) per brand. The rest
+ * is intentionally neutral so any product can wear it.
+ */
+
+:root {
+  --sl-font: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sl-font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+
+  /* Motion — strong custom curves (built-in easings are too weak). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-fast: 130ms;
+  --dur: 180ms;
+
+  /* Slightly wider, comfortable reading column. */
+  --sl-content-width: 47rem;
+  --sl-nav-height: 4rem;
+}
+
+/* ---------- Dark theme (default) — Linear near-black ---------- */
+:root {
+  --sl-color-accent-low: #211d4d;
+  --sl-color-accent: #6e79e8;
+  --sl-color-accent-high: #c8ccff;
+
+  --sl-color-white: #f7f8fb;
+  --sl-color-gray-1: #eceef4;
+  --sl-color-gray-2: #c3c6d4;
+  --sl-color-gray-3: #888da0;
+  --sl-color-gray-4: #555a6b;
+  --sl-color-gray-5: #2b2e3a;
+  --sl-color-gray-6: #181a22;
+  --sl-color-black: #0b0c10;
+
+  /* Derived surfaces — keep nav/sidebar a hair off the page bg. */
+  --sl-color-bg: #0b0c10;
+  --sl-color-bg-nav: rgba(12, 13, 17, 0.72);
+  --sl-color-bg-sidebar: #0d0e13;
+  --sl-color-bg-inline-code: #181a22;
+  --sl-color-hairline: rgba(255, 255, 255, 0.07);
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.05);
+  --sl-color-hairline-shade: rgba(255, 255, 255, 0.04);
+}
+
+/* ---------- Light theme ---------- */
+:root[data-theme="light"] {
+  --sl-color-accent-low: #e1e3fb;
+  --sl-color-accent: #4b4ed8;
+  --sl-color-accent-high: #20214f;
+
+  --sl-color-white: #14151c;
+  --sl-color-gray-1: #20222b;
+  --sl-color-gray-2: #41434f;
+  --sl-color-gray-3: #5f6273;
+  --sl-color-gray-4: #8c8fa0;
+  --sl-color-gray-5: #c9ccd6;
+  --sl-color-gray-6: #eceef4;
+  --sl-color-gray-7: #f6f7fb;
+  --sl-color-black: #ffffff;
+
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: rgba(255, 255, 255, 0.78);
+  --sl-color-bg-sidebar: #fbfbfe;
+  --sl-color-bg-inline-code: #eceef4;
+  --sl-color-hairline: rgba(15, 18, 35, 0.1);
+  --sl-color-hairline-light: rgba(15, 18, 35, 0.07);
+  --sl-color-hairline-shade: rgba(15, 18, 35, 0.05);
+}
+
+/* Frosted, hairline-bottomed top nav — a quiet Linear cue. */
+.header {
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* Site title: tighten tracking like Linear's product wordmark. */
+.site-title {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Headings — tighter tracking, confident weight. */
+:where(h1, h2, h3, h4, .sl-markdown-content h1, .sl-markdown-content h2) {
+  letter-spacing: -0.018em;
+}
+
+/* Links: animate color, never "all". */
+.sl-markdown-content a {
+  text-underline-offset: 0.18em;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+/* Sidebar entries: subtle, fast feedback. */
+.sidebar-content a {
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out);
+  border-radius: 6px;
+}
+
+/* Cards (Starlight <Card>/<LinkCard>) — refined hover lift, hover-capable pointers only. */
+@media (hover: hover) and (pointer: fine) {
+  .sl-markdown-content .card,
+  .sl-markdown-content a.sl-link-card {
+    transition:
+      transform var(--dur) var(--ease-out),
+      border-color var(--dur) var(--ease-out),
+      background-color var(--dur) var(--ease-out);
+  }
+  .sl-markdown-content a.sl-link-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--sl-color-accent) 55%, var(--sl-color-hairline));
+  }
+}
+
+/* Pressable feedback on the hero CTAs — the interface listening back. */
+.sl-markdown-content .action {
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.sl-markdown-content .action:active {
+  transform: scale(0.97);
+}
+
+/* <kbd> keycaps — useful for any product with shortcuts; harmless otherwise. */
+kbd,
+.sl-markdown-content kbd {
+  font-family: var(--sl-font-mono);
+  font-size: 0.82em;
+  line-height: 1;
+  padding: 0.28em 0.5em;
+  border-radius: 6px;
+  color: var(--sl-color-white);
+  background: color-mix(in oklab, var(--sl-color-gray-6) 80%, var(--sl-color-bg));
+  border: 1px solid var(--sl-color-hairline);
+  border-bottom-color: color-mix(in oklab, var(--sl-color-hairline) 60%, black);
+  box-shadow: 0 1px 0 0 color-mix(in oklab, black 35%, transparent);
+  white-space: nowrap;
+}
+
+/* Hero: calmer, more "product page" than docs page. */
+.hero h1 {
+  letter-spacing: -0.03em;
+}
+.hero .tagline {
+  color: var(--sl-color-gray-2);
+}
+
+/*
+ * Concept-mockup figures — framed, captioned, clearly "not the real thing yet".
+ * Wrap a static SVG/HTML mockup in <figure class="concept"> ... <figcaption>.
+ */
+.concept {
+  margin: 1.75rem 0;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      120% 140% at 50% 0%,
+      color-mix(in oklab, var(--sl-color-accent) 9%, transparent),
+      transparent 60%
+    ),
+    var(--sl-color-bg-sidebar);
+  overflow: hidden;
+}
+.concept svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.concept figcaption {
+  padding: 0.6rem 0.9rem;
+  font-size: var(--sl-text-xs);
+  color: var(--sl-color-gray-3);
+  border-top: 1px solid var(--sl-color-hairline);
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.concept figcaption::before {
+  content: "CONCEPT";
+  font-family: var(--sl-font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  padding: 0.15em 0.45em;
+  border-radius: 5px;
+  color: var(--sl-color-accent-high);
+  background: var(--sl-color-accent-low);
+  border: 1px solid color-mix(in oklab, var(--sl-color-accent) 35%, transparent);
+}
+
+/* Accessibility: motion is a courtesy, not a requirement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: a universal reduced-motion override must beat element-level transition rules */
+    transition-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: a universal reduced-motion override must beat element-level animation rules */
+    animation-duration: 0.01ms !important;
+  }
+  .sl-markdown-content a.sl-link-card:hover {
+    transform: none;
+  }
+}
