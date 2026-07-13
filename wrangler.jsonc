@@ -1,8 +1,18 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
+    // IMPORTANT: This is the production product Worker. Keep its name and apex
+    // domain here only; reusing "fetchmoji" in another Wrangler config can move
+    // or remove this Worker's custom-domain bindings during deployment.
     "name": "fetchmoji",
+    "account_id": "8d4ef8fe891f53e5658d3fdd5a4c7630",
     "compatibility_date": "2026-03-30",
     "main": "src/worker.ts",
+    "routes": [
+      {
+        "pattern": "fetchmoji.com",
+        "custom_domain": true
+      }
+    ],
     "assets": {
       "directory": "./dist",
       "binding": "ASSETS",

@@ -1,6 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "fetchmoji",
+  // IMPORTANT: Keep the docs Worker name distinct from the production product
+  // Worker. Reusing "fetchmoji" here can overwrite the product's custom-domain
+  // bindings during deployment.
+  "name": "fetchmoji-docs",
   "account_id": "8d4ef8fe891f53e5658d3fdd5a4c7630",
   "compatibility_date": "2026-07-11",
   // Hono auth gate (worker/index.ts) fronts the static assets. run_worker_first
@@ -21,6 +24,9 @@
     // e.g. ".docs.example.com" to share one login across a custom-domain fleet.
     "COOKIE_DOMAIN": ".docs.samcarlton.com",
     "SESSION_TTL_DAYS": "365"
+  },
+  "secrets": {
+    "required": ["AUTH_SECRET"]
   },
   "observability": {
     "enabled": true
