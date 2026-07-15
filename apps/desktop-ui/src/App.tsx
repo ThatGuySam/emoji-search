@@ -1,75 +1,139 @@
 import {
   type KeyboardEvent,
-  type PointerEvent,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
-} from "react"
-import { getDesktopHost } from "./host"
-import { searchEmoji } from "./search"
-import type { EmojiResult } from "./types"
+} from 'react'
 
-const GRID_COLUMNS = 6
+import { EmojiSearchView } from '@/components/EmojiSearchView'
 
-function resultId(result: EmojiResult, index: number): string {
-  const codePoints = Array.from(result.emoji, (character) =>
-    character.codePointAt(0)?.toString(16),
-  ).join("-")
-  return `emoji-${codePoints}-${index}`
+import { getDesktopHost } from './host'
+import { searchEmoji } from './search'
+
+type EmojiValue = {
+  char: string
+  name: string
+}
+
+export function shouldBypassPaletteKey(event: {
+  key: string
+  altKey: boolean
+  ctrlKey: boolean
+  metaKey: boolean
+  shiftKey: boolean
+  isComposing: boolean
+}): boolean {
+  return event.isComposing ||
+    event.key === 'Process' ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey
+}
+
+function renderedColumnCount(): number {
+  const buttons = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      '[data-emoji-result]',
+    ),
+  )
+  const first = buttons[0]
+  if (!first) return 1
+
+  const firstTop = first.getBoundingClientRect().top
+  const count = buttons.findIndex((button) =>
+    Math.abs(
+      button.getBoundingClientRect().top - firstTop,
+    ) > 1,
+  )
+
+  return count === -1 ? buttons.length : count
 }
 
 export function App() {
-  const [query, setQuery] = useState("")
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [query, setQuery] = useState('')
+  const [selectedIndex, setSelectedIndex] =
+    useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [statusMessage, setStatusMessage] = useState("Ready")
-  const inputRef = useRef<HTMLInputElement>(null)
-  const results = useMemo(() => searchEmoji(query), [query])
-  const selectedResult = results[selectedIndex]
+  const [statusMessage, setStatusMessage] =
+    useState('Ready')
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const hasQuery = query.trim().length > 0
+  const results = useMemo(
+    () => hasQuery ? searchEmoji(query, 21) : [],
+    [hasQuery, query],
+  )
+  const rows = useMemo(
+    () => results.map((result) =>
+      `${result.emoji} ${result.label}`),
+    [results],
+  )
 
   const prepareForSearch = useCallback(() => {
-    setQuery("")
-    setSelectedIndex(0)
-    setStatusMessage("Ready")
+    setQuery('')
+    setSelectedIndex(null)
+    setStatusMessage('Ready')
     requestAnimationFrame(() => inputRef.current?.focus())
   }, [])
 
   useEffect(() => {
     prepareForSearch()
-    window.addEventListener("focus", prepareForSearch)
-    window.addEventListener("fetchmoji:open", prepareForSearch)
+    window.addEventListener('focus', prepareForSearch)
+    window.addEventListener(
+      'fetchmoji:open',
+      prepareForSearch,
+    )
 
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") prepareForSearch()
+      if (document.visibilityState === 'visible') {
+        prepareForSearch()
+      }
     }
-    document.addEventListener("visibilitychange", handleVisibility)
+    document.addEventListener(
+      'visibilitychange',
+      handleVisibility,
+    )
 
     return () => {
-      window.removeEventListener("focus", prepareForSearch)
-      window.removeEventListener("fetchmoji:open", prepareForSearch)
-      document.removeEventListener("visibilitychange", handleVisibility)
+      window.removeEventListener('focus', prepareForSearch)
+      window.removeEventListener(
+        'fetchmoji:open',
+        prepareForSearch,
+      )
+      document.removeEventListener(
+        'visibilitychange',
+        handleVisibility,
+      )
     }
   }, [prepareForSearch])
 
   useEffect(() => {
-    setSelectedIndex(0)
-  }, [query])
-
-  useEffect(() => {
-    if (selectedIndex >= results.length) setSelectedIndex(Math.max(0, results.length - 1))
+    if (
+      selectedIndex != null &&
+      selectedIndex >= results.length
+    ) {
+      setSelectedIndex(
+        results.length === 0 ? null : results.length - 1,
+      )
+    }
   }, [results.length, selectedIndex])
 
-  const insertEmoji = useCallback(async (result: EmojiResult | undefined) => {
-    if (!result || isSubmitting) return
+  const insertEmoji = useCallback(async (
+    emoji: EmojiValue | undefined,
+  ) => {
+    if (!emoji || isSubmitting) return
     setIsSubmitting(true)
 
     try {
-      const outcome = await getDesktopHost().insertEmoji(result.emoji)
+      const outcome = await getDesktopHost()
+        .insertEmoji(emoji.char)
       setStatusMessage(outcome.message)
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not insert the emoji"
+      const message = error instanceof Error
+        ? error.message
+        : 'Could not insert the emoji'
       setStatusMessage(message)
     } finally {
       setIsSubmitting(false)
@@ -79,134 +143,111 @@ export function App() {
   const moveSelection = useCallback((delta: number) => {
     if (results.length === 0) return
     setSelectedIndex((current) => {
-      const next = current + delta
-      return Math.min(results.length - 1, Math.max(0, next))
+      if (current == null) return 0
+      return Math.min(
+        results.length - 1,
+        Math.max(0, current + delta),
+      )
     })
   }, [results.length])
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (shouldBypassPaletteKey({
+      key: event.key,
+      altKey: event.altKey,
+      ctrlKey: event.ctrlKey,
+      metaKey: event.metaKey,
+      shiftKey: event.shiftKey,
+      isComposing: event.nativeEvent.isComposing,
+    })) {
+      return
+    }
+
     switch (event.key) {
-      case "ArrowRight":
+      case 'ArrowRight':
         event.preventDefault()
         moveSelection(1)
         break
-      case "ArrowLeft":
+      case 'ArrowLeft':
         event.preventDefault()
         moveSelection(-1)
         break
-      case "ArrowDown":
+      case 'ArrowDown':
         event.preventDefault()
-        moveSelection(GRID_COLUMNS)
+        moveSelection(renderedColumnCount())
         break
-      case "ArrowUp":
+      case 'ArrowUp':
         event.preventDefault()
-        moveSelection(-GRID_COLUMNS)
+        moveSelection(-renderedColumnCount())
         break
-      case "Home":
+      case 'Home':
         event.preventDefault()
-        setSelectedIndex(0)
+        setSelectedIndex(results.length > 0 ? 0 : null)
         break
-      case "End":
+      case 'End':
         event.preventDefault()
-        setSelectedIndex(Math.max(0, results.length - 1))
+        setSelectedIndex(
+          results.length > 0 ? results.length - 1 : null,
+        )
         break
-      case "Enter":
+      case 'Enter': {
         event.preventDefault()
-        void insertEmoji(selectedResult)
+        const index = selectedIndex ?? 0
+        const result = results[index]
+        void insertEmoji(result ? {
+          char: result.emoji,
+          name: result.label,
+        } : undefined)
         break
-      case "Escape":
+      }
+      case 'Escape':
         event.preventDefault()
         void getDesktopHost().dismiss()
         break
     }
   }
 
-  const handlePointerSelection = (
-    event: PointerEvent<HTMLLIElement>,
-    result: EmojiResult,
-  ) => {
-    event.preventDefault()
-    void insertEmoji(result)
+  const selectEmoji = (emoji: EmojiValue) => {
+    void insertEmoji(emoji)
   }
 
-  const resultSummary = query.trim()
-    ? `${results.length} result${results.length === 1 ? "" : "s"} for ${query}`
-    : "Quick picks"
+  const updateQuery = (next: string) => {
+    setQuery(next)
+    setSelectedIndex(null)
+  }
+
+  const resultSummary = hasQuery
+    ? `${results.length} result${
+        results.length === 1 ? '' : 's'
+      } for ${query}`
+    : 'Ready to search'
 
   return (
-    <main className="palette" aria-label="FetchMoji emoji palette">
-      <header className="search-region">
-        <span className="app-mark" aria-hidden="true">F</span>
-        <label className="visually-hidden" htmlFor="emoji-query">
-          Describe the emoji you want
-        </label>
-        <input
-          ref={inputRef}
-          id="emoji-query"
-          type="search"
-          role="combobox"
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck="false"
-          enterKeyHint="go"
-          placeholder="Describe the emoji…"
-          value={query}
-          aria-autocomplete="list"
-          aria-expanded="true"
-          aria-controls="emoji-results"
-          aria-activedescendant={
-            selectedResult ? resultId(selectedResult, selectedIndex) : undefined
-          }
-          onChange={(event) => setQuery(event.currentTarget.value)}
-          onKeyDown={handleKeyDown}
-        />
-        <kbd aria-label="Control Command Period">⌃⌘.</kbd>
-      </header>
-
-      <div className="results-heading" aria-hidden="true">
-        <span>{query.trim() ? "Matches" : "Quick picks"}</span>
-        <span>{results.length}</span>
-      </div>
-
-      {results.length > 0 ? (
-        <ul id="emoji-results" className="results-grid" role="listbox" aria-label={resultSummary}>
-          {results.map((result, index) => {
-            const isSelected = index === selectedIndex
-            return (
-              <li
-                id={resultId(result, index)}
-                key={result.emoji}
-                role="option"
-                aria-label={`${result.label}, ${result.emoji}`}
-                aria-selected={isSelected}
-                className="emoji-result"
-                data-selected={isSelected || undefined}
-                onPointerEnter={() => setSelectedIndex(index)}
-                onPointerDown={(event) => handlePointerSelection(event, result)}
-              >
-                <span className="emoji-glyph" aria-hidden="true">{result.emoji}</span>
-                <span className="emoji-label" aria-hidden="true">{result.label}</span>
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <section className="empty-state" aria-label="No emoji found">
-          <span className="empty-glyph" aria-hidden="true">⌕</span>
-          <h1>No emoji found</h1>
-          <p>Try a feeling, object, gesture, or phrase.</p>
-        </section>
-      )}
-
-      <footer className="shortcut-help" aria-hidden="true">
-        <span><kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> navigate</span>
-        <span><kbd>↵</kbd> insert</span>
-        <span><kbd>esc</kbd> close</span>
-      </footer>
-
-      <p className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+    <>
+      <EmojiSearchView
+        query={query}
+        results={rows}
+        isCentered={!hasQuery}
+        selectedIndex={selectedIndex}
+        searchInputRef={inputRef}
+        onQueryChange={updateQuery}
+        onClear={() => updateQuery('')}
+        onChip={updateQuery}
+        onPick={selectEmoji}
+        onMenu={selectEmoji}
+        onSearchKeyDown={handleKeyDown}
+        onActiveIndexChange={setSelectedIndex}
+      />
+      <p
+        className="sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {resultSummary}. {statusMessage}
       </p>
-    </main>
+    </>
   )
 }

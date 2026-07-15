@@ -10,7 +10,10 @@
 ## Run from source
 
 ```bash
-cd ../desktop-ui
+cd ../..
+pnpm install
+
+cd apps/desktop-ui
 pnpm install --ignore-workspace
 pnpm build
 
@@ -31,6 +34,10 @@ open ".build/app/FetchMoji AppKit.app"
 
 The script builds the shared renderer, compiles the release executable,
 assembles an ad-hoc-signed `.app`, and copies the renderer into the bundle.
+The WKWebView reads those assets through a private, read-only
+`fetchmoji://app/` handler so JavaScript modules have a stable origin. The
+handler rejects paths outside the renderer directory and assigns explicit MIME
+types instead of exposing arbitrary local files.
 
 ## Permission behavior
 

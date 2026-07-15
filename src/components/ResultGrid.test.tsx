@@ -62,4 +62,32 @@ describe('ResultGrid', () => {
       name: 'rocket',
     })
   })
+
+  it('exposes desktop keyboard selection without moving focus', () => {
+    const onActiveIndexChange = vi.fn()
+
+    render(
+      <ResultGrid
+        results={['🚀 rocket', '🎉 party popper']}
+        selectedIndex={1}
+        onActiveIndexChange={onActiveIndexChange}
+        onCopy={() => {}}
+        onMenu={() => {}}
+      />,
+    )
+
+    const rocket = screen.getByRole('button', {
+      name: 'Copy rocket emoji',
+    })
+    const party = screen.getByRole('button', {
+      name: 'Copy party popper emoji',
+    })
+
+    expect(rocket.getAttribute('data-active')).toBeNull()
+    expect(party.getAttribute('data-active')).toBe('true')
+    expect(party.id).toBe('emoji-result-1')
+
+    fireEvent.pointerEnter(rocket)
+    expect(onActiveIndexChange).toHaveBeenCalledWith(0)
+  })
 })

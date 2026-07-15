@@ -22,6 +22,9 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDe
     private var hotKey: EventHotKeyRef?
     private var hotKeyHandler: EventHandlerRef?
     private var allowedDocumentURL: URL?
+    private var rendererSchemeHandler: RendererSchemeHandler?
+    private var rendererReady = false
+    private var wantsPaletteVisible = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -87,6 +90,16 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDe
         let configuration = WKWebViewConfiguration()
         configuration.userContentController = contentController
         configuration.websiteDataStore = .nonPersistent()
+        if let rendererRootURL = rendererRootURL() {
+            let handler = RendererSchemeHandler(
+                rootURL: rendererRootURL
+            )
+            configuration.setURLSchemeHandler(
+                handler,
+                forURLScheme: RendererAssetStore.scheme
+            )
+            rendererSchemeHandler = handler
+        }
 
         let webView = WKWebView(
             frame: NSRect(x: 0, y: 0, width: PaletteConstants.width, height: PaletteConstants.height),
@@ -132,30 +145,40 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDe
             return
         }
 
-        let bundledIndex = Bundle.main.resourceURL?
+        guard rendererSchemeHandler != nil,
+              let indexURL = URL(
+                string: "fetchmoji://app/index.html"
+              ) else {
+            webView.loadHTMLString(Self.missingRendererHTML, baseURL: nil)
+            return
+        }
+
+        allowedDocumentURL = indexURL
+        webView.load(URLRequest(url: indexURL))
+    }
+
+    private func rendererRootURL() -> URL? {
+        let bundledRoot = Bundle.main.resourceURL?
             .appendingPathComponent("desktop-ui", isDirectory: true)
-            .appendingPathComponent("index.html")
 
         let sourceRoot = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-        let sourceIndex = sourceRoot
+        let sourceRendererRoot = sourceRoot
             .deletingLastPathComponent()
-            .appendingPathComponent("desktop-ui/dist/index.html")
+            .appendingPathComponent("desktop-ui/dist", isDirectory: true)
             .standardizedFileURL
 
-        let indexURL = [bundledIndex, sourceIndex]
+        return [bundledRoot, sourceRendererRoot]
             .compactMap { $0 }
-            .first { FileManager.default.fileExists(atPath: $0.path) }
-
-        guard let indexURL else {
-            webView.loadHTMLString(Self.missingRendererHTML, baseURL: nil)
-            return
-        }
-
-        allowedDocumentURL = indexURL.standardizedFileURL
-        webView.loadFileURL(indexURL, allowingReadAccessTo: indexURL.deletingLastPathComponent())
+            .first { root in
+                FileManager.default.fileExists(
+                    atPath: root
+                        .appendingPathComponent("index.html")
+                        .path
+                )
+            }
     }
 
     @MainActor
@@ -177,6 +200,16 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDe
             isAllowed = requestedURL == allowedDocumentURL || requestedURL.scheme == "about"
         }
         decisionHandler(isAllowed ? .allow : .cancel)
+    }
+
+    func webView(
+        _ webView: WKWebView,
+        didFinish navigation: WKNavigation!
+    ) {
+        rendererReady = true
+        if wantsPaletteVisible {
+            revealPalette()
+        }
     }
 
     private func registerGlobalHotKey() -> Bool {
@@ -218,7 +251,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDe
     }
 
     private func togglePalette() {
-        if panel?.isVisible == true {
+        if panel?.isVisible == true || wantsPaletteVisible {
             dismissPalette()
         } else {
             showPalette()
@@ -226,6 +259,12 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDe
     }
 
     private func showPalette() {
+        wantsPaletteVisible = true
+        guard rendererReady else { return }
+        revealPalette()
+    }
+
+    private func revealPalette() {
         guard let panel else { return }
         position(panel)
         panel.orderFrontRegardless()
@@ -236,6 +275,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDe
     }
 
     private func dismissPalette() {
+        wantsPaletteVisible = false
         panel?.orderOut(nil)
     }
 

@@ -116,7 +116,22 @@
   * {
     @apply border-border outline-ring/50;
   }
+  input[type='search']::-webkit-search-cancel-button {
+    display: none;
+    appearance: none;
+  }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

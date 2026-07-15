@@ -13,9 +13,7 @@ import {
   SQLITE_DB_URL,
 } from "@/constants";
 import { Button } from "@/components/Button";
-import { Input } from "@/components/Input";
-import { ResultGrid } from "@/components/ResultGrid";
-import { RecentEmojiSection } from "@/components/RecentEmojiSection";
+import { EmojiSearchView } from "@/components/EmojiSearchView";
 import {
   Sheet,
   SheetContent,
@@ -56,7 +54,6 @@ import { mergeRecentEmojiResults } from "@/lib/recentEmojiResults";
  */
 export function App() {
   const [query, setQuery] = useState("");
-  const [spacerHeight, setSpacerHeight] = useState(0);
   const [recentEmojis, setRecentEmojis] = useState<
     RecentEmoji[]
   >([]);
@@ -102,7 +99,6 @@ export function App() {
   const [toast, setToast] = useState<string | null>(null);
 
   const toastTimer = useRef<number | null>(null);
-  const headerRef = useRef<HTMLHeadingElement | null>(null);
   
   const noCache = (() => {
     try {
@@ -168,117 +164,35 @@ export function App() {
     !hasQuery &&
     results.length === 0 &&
     recentEmojis.length === 0;
-  const showResultsMeta =
-    hasQuery ||
-    results.length > 0 ||
-    isSearching ||
-    Boolean(searchError);
-
-  useEffect(() => {
-    /**
-     * Measure header and compute spacer so the
-     * search field appears vertically centered
-     * on first load. Collapses once typing.
-     */
-    const updateSpacer = () => {
-      if (!headerRef.current) return;
-      if (!isCentered) {
-        setSpacerHeight(0);
-        return;
-      }
-      const headerBox =
-        headerRef.current.getBoundingClientRect();
-      const viewport = window.innerHeight;
-      const target = Math.max(
-        0,
-        viewport / 2 - headerBox.height / 2 - 12,
-      );
-      setSpacerHeight(Math.floor(target));
-    };
-    updateSpacer();
-    window.addEventListener("resize", updateSpacer);
-    return () =>
-      window.removeEventListener("resize", updateSpacer);
-  }, [isCentered]);
-
   return (
-    <div className="min-h-dvh max-w-xl grid grid-rows-[auto_auto_minmax(0,1fr)] mx-auto p-4">
-      <div
-        aria-hidden
-        className="transition-[height] duration-300"
-        style={{ height: `${spacerHeight}px` }}
+    <>
+      <EmojiSearchView
+        query={query}
+        results={results}
+        recentEmojis={recentEmojis}
+        isSearching={isSearching}
+        backendError={backendError}
+        searchError={searchError}
+        isCentered={isCentered}
+        onQueryChange={(next) => {
+          setQuery(next);
+          classify(next);
+        }}
+        onClear={() => {
+          setQuery("");
+          classify("");
+        }}
+        onChip={(chip) => {
+          setQuery(chip);
+          classify(chip);
+        }}
+        onPick={onCopy}
+        onMenu={(emoji) => setSheet({
+          open: true,
+          char: emoji.char,
+          name: emoji.name,
+        })}
       />
-      <header
-        className="sticky top-0 z-10 border-b backdrop-blur
-        bg-background/80 supports-[backdrop-filter]:bg-background/60
-        px-3 pt-[max(8px,env(safe-area-inset-top))] pb-2"
-        ref={headerRef}
-      >
-        <SearchHeader
-          query={query}
-          showSpinner={isSearching}
-          onChange={(next) => {
-            setQuery(next);
-            classify(next);
-          }}
-          onClear={() => {
-            setQuery("");
-            classify("");
-          }}
-          onChip={(chip) => {
-            setQuery(chip);
-            classify(chip);
-          }}
-        />
-      </header>
-
-      <main className="min-h-0 overflow-y-auto p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
-        <h1 className="sr-only">Emoji search</h1>
-        {!hasQuery ? (
-          <RecentEmojiSection
-            emojis={recentEmojis}
-            onCopy={onCopy}
-            onMenu={(emoji) => setSheet({
-              open: true,
-              char: emoji.char,
-              name: emoji.name,
-            })}
-          />
-        ) : null}
-        {showResultsMeta ? (
-          <h2 className="text-sm font-medium text-muted-foreground mb-2">
-            Results
-            {backendError ? (
-              <span className="ml-2 text-xs font-normal text-amber-700">
-                fallback
-              </span>
-            ) : null}
-          </h2>
-        ) : null}
-        {searchError ? (
-          <p
-            role="status"
-            aria-live="polite"
-            className="mb-3 text-sm text-amber-700"
-          >
-            {searchError}
-          </p>
-        ) : null}
-        <ResultGrid
-          results={results}
-          onCopy={(x) => onCopy(x)}
-          onMenu={(x) => setSheet({
-            open: true,
-            char: x.char,
-            name: x.name,
-          })}
-        />
-        {isSearching && (
-          <div className="sr-only" aria-live="polite">
-            Loading...
-          </div>
-        )}
-      </main>
 
       <CopyToast toast={toast} />
 
@@ -291,7 +205,7 @@ export function App() {
         onClose={() => setSheet(s=>({...s, open:false}))}
         onOpenChange={(o) => setSheet(s => ({...s, open:o}))}
       />
-    </div>
+    </>
   );
 }
 
@@ -438,95 +352,6 @@ function useEmojiSearch(options: {
     searchError: state.searchError,
     classify,
   };
-}
-
-/**
- * SearchHeader
- * Input + clear + spinner + chips.
- */
-function SearchHeader(props: {
-  query: string;
-  showSpinner: boolean;
-  onChange: (next: string) => void;
-  onClear: () => void;
-  onChip: (chip: string) => void;
-}) {
-  const {
-    query,
-    showSpinner,
-    onChange,
-    onClear,
-    onChip,
-  } = props;
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const chips = (!query ? [
-    "shout",
-    "attach",
-    "copy",
-    "celebrate",
-    "secure",
-    "search",
-  ] : []).slice(0, 6);
-
-  useEffect(() => {
-    if (!inputRef.current) {
-      return;
-    }
-
-    if (document.activeElement === inputRef.current) {
-      return;
-    }
-
-    inputRef.current.focus({
-      preventScroll: true,
-    });
-  }, []);
-
-  return (
-    <>
-      <label className="flex items-center gap-2 whitespace-nowrap">
-        <Input
-          ref={inputRef}
-          placeholder="Search emojis by meaning… try shout, attach, celebrate"
-          aria-label="Search emojis by meaning"
-          autoFocus
-          value={query}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <Button
-          variant="outline"
-          disabled={query.length === 0}
-          onClick={onClear}
-          aria-label="Clear search"
-          title="Clear"
-        >
-          ✕
-        </Button>
-        {showSpinner && (
-          <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-            <span
-              aria-hidden="true"
-              className="inline-block h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin"
-            />
-            <span>Searching…</span>
-          </span>
-        )}
-      </label>
-      <div className="mt-2 flex flex-wrap gap-2" aria-live="polite">
-        {chips.map((chip) => (
-          <Button
-            key={chip}
-            size="sm"
-            variant="outline"
-            className="rounded-full"
-            onClick={() => onChip(chip)}
-          >
-            {chip}
-          </Button>
-        ))}
-      </div>
-    </>
-  );
 }
 
 /**

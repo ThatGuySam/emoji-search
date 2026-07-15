@@ -1,0 +1,5 @@
+@import '../../../src/styles/global.css';
+
+/* Build-only source registration for the shared website component tree. */
+@source '../../../src';
+@source '.';

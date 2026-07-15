@@ -113,7 +113,7 @@ function createPaletteWindow() {
     alwaysOnTop: true,
     skipTaskbar: true,
     hiddenInMissionControl: true,
-    backgroundColor: "#f5f3fb",
+    backgroundColor: "#0a0a0a",
     title: "FetchMoji",
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs"),
@@ -125,7 +125,11 @@ function createPaletteWindow() {
   })
 
   paletteWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-  paletteWindow.on("blur", () => hidePalette())
+  paletteWindow.on("blur", () => {
+    if (process.env.FETCHMOJI_SHOW_ON_LAUNCH !== "1") {
+      hidePalette()
+    }
+  })
   paletteWindow.on("close", (event) => {
     if (!isQuitting) {
       event.preventDefault()
@@ -137,6 +141,9 @@ function createPaletteWindow() {
   paletteWindow.webContents.on("will-navigate", (event, targetUrl) => {
     if (!isTrustedRendererUrl(targetUrl, rendererIndex())) event.preventDefault()
   })
+  if (process.env.FETCHMOJI_SHOW_ON_LAUNCH === "1") {
+    paletteWindow.webContents.once("did-finish-load", showPalette)
+  }
   void paletteWindow.loadFile(rendererIndex())
 }
 
@@ -162,18 +169,18 @@ app.on("window-all-closed", () => {
   // The global shortcut remains available until the user explicitly quits.
 })
 
-await app.whenReady()
-app.setName("FetchMoji Electron")
-app.dock?.hide()
-createPaletteWindow()
+void app.whenReady().then(() => {
+  app.setName("FetchMoji Electron")
+  app.dock?.hide()
+  createPaletteWindow()
 
-if (!globalShortcut.register(SHORTCUT, togglePalette)) {
-  dialog.showErrorBox(
-    "FetchMoji shortcut unavailable",
-    "Control-Command-. could not be registered. Another app may already use it.",
-  )
-}
-
-if (process.env.FETCHMOJI_SHOW_ON_LAUNCH === "1") {
-  paletteWindow.webContents.once("did-finish-load", showPalette)
-}
+  if (!globalShortcut.register(SHORTCUT, togglePalette)) {
+    dialog.showErrorBox(
+      "FetchMoji shortcut unavailable",
+      "Control-Command-. could not be registered. Another app may already use it.",
+    )
+  }
+}).catch((error) => {
+  console.error("FetchMoji failed to start", error)
+  app.quit()
+})

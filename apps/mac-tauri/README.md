@@ -11,6 +11,13 @@
 ## Run it
 
 ```bash
+cd ../..
+pnpm install
+
+cd apps/desktop-ui
+pnpm install --ignore-workspace
+
+cd ../mac-tauri
 pnpm install --ignore-workspace
 pnpm dev
 ```

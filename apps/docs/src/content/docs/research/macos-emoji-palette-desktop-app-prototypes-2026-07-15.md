@@ -16,8 +16,11 @@ sidebar:
 
 ## Recommendation
 
-Build the three prototypes around one static renderer in `apps/desktop-ui`.
-Each shell owns only the responsibilities that require desktop privileges:
+Build the three prototypes around the website's shared search surface. The
+website and `apps/desktop-ui` both render
+`src/components/EmojiSearchView.tsx` with `src/styles/global.css`; there is no
+desktop-only fork of the interface. Each shell owns only the responsibilities
+that require desktop privileges:
 
 1. Register the global shortcut.
 2. Show and focus a compact palette window.
@@ -26,8 +29,31 @@ Each shell owns only the responsibilities that require desktop privileges:
    Command-V event for the app that regains focus.
 5. Fall back to copy-only behavior when macOS has not granted permission.
 
-This is the cleanest comparison because the visual interface, search data,
-keyboard behavior, and accessibility semantics do not vary by framework.
+This is the cleanest shell comparison because the visual interface, desktop
+search adapter, keyboard behavior, and accessibility semantics do not vary by
+framework.
+
+### Shared interface boundary
+
+The reusable boundary is presentation, not the website's full runtime:
+
+- The website and desktop renderer import the same `EmojiSearchView`, `Input`,
+  `Button`, `ResultGrid`, `EmojiButton`, and Tailwind theme.
+- The website keeps its semantic model and database controller.
+- The desktop prototypes use a bundled `emojilib` keyword controller. This
+  keeps queries local and avoids loading production web assets or remote code
+  in a privileged desktop webview.
+- All three desktop shells package the one `apps/desktop-ui/dist` output and
+  expose the same two host methods.
+
+This split lets the desktop prototypes inherit website UI refinements while
+keeping native packaging and permission behavior independently testable. A
+future release can move the semantic search assets behind the same view props
+without changing any of the host implementations.
+
+That direct source import is an intentional monorepo dependency: a fresh build
+installs the root website dependencies before the app-local desktop toolchain.
+The renderer is shared code, not a separately publishable UI package.
 
 ### Framework fit
 
@@ -49,9 +75,9 @@ Measured on July 15, 2026 after successful Apple Silicon app builds with
 
 | Prototype bundle | Disk usage | Raw `du -sk` result |
 | --- | ---: | ---: |
-| AppKit | 1.65 MiB | 1,688 KiB |
-| Tauri | 8.75 MiB | 8,956 KiB |
-| Electron | 278.70 MiB | 285,384 KiB |
+| AppKit | 2.35 MiB | 2,404 KiB |
+| Tauri | 8.79 MiB | 9,004 KiB |
+| Electron | 278.42 MiB | 285,104 KiB |
 
 These are local prototype bundle measurements, not universal-binary download
 sizes or signed release estimates. The Electron host ASAR is only 8 KiB after
@@ -76,10 +102,11 @@ window:
    and posts Command-V when Accessibility access is available.
 7. Escape closes without changing the pasteboard.
 
-There is no opening or closing animation. This is a high-frequency tool, and
-instant response is more useful than transition polish. Focus indication,
-screen-reader names, reduced-motion support, and reduced-transparency support
-are part of the shared UI rather than shell-specific enhancements.
+The native window appears and hides without a shell animation. The shared
+website surface retains its brief search-centering transition; the shared
+stylesheet collapses it when macOS Reduce Motion is enabled. Focus indication
+and screen-reader names are also part of the shared UI rather than
+shell-specific enhancements.
 
 ## Shortcut audit
 
@@ -125,6 +152,9 @@ global listener while capturing the new chord.
 - Package the HTML, CSS, JavaScript, and emoji keyword data with the app.
 - Do not load the production website or remote executable code into a
   privileged desktop webview.
+- Serve AppKit's bundle through a private read-only `fetchmoji://app/` scheme
+  rather than a `file://` module page. Resolve only paths contained by the
+  renderer root and return an explicit MIME type for every asset.
 - Give the renderer only `insertEmoji` and `dismiss` capabilities. Validate the
   selected value again in the host before touching desktop APIs.
 - Use a restrictive Content Security Policy. Tauri adds hashes and nonces to a
@@ -162,12 +192,17 @@ text controls. Posting the Command-V event is the privileged step:
 ## Prototype architecture
 
 ```text
-apps/desktop-ui
-  local emoji index + React palette + DesktopHost contract
+src/components/App.tsx (website semantic-search controller)
         │
-        ├── apps/mac-appkit   Swift / AppKit / WKWebView
-        ├── apps/mac-tauri    Rust / Tauri / system WebKit
-        └── apps/mac-electron Electron / Chromium / isolated preload
+        └── src/components/EmojiSearchView.tsx
+            + website components + src/styles/global.css
+                    │
+                    └── apps/desktop-ui
+                        local keyword controller + DesktopHost contract
+                              │
+                              ├── apps/mac-appkit
+                              ├── apps/mac-tauri
+                              └── apps/mac-electron
 ```
 
 The shared contract is intentionally small:
@@ -185,6 +220,14 @@ interface DesktopHost {
 The renderer has a browser fallback that copies to the clipboard. That makes it
 independently testable and lets all shell builds consume the exact same static
 output.
+
+The first packaged smoke pass also established launch-order requirements:
+AppKit waits for `WKNavigationDelegate.didFinish`, Tauri waits specifically for
+`PageLoadEvent::Finished`, and Electron registers `did-finish-load` before
+calling `loadFile` when honoring the development show-on-launch flag.
+Electron's ESM main process uses `app.whenReady().then(...)` rather than a
+top-level await, which otherwise prevented the ready event from being observed
+in this build.
 
 ## Release gates not answered by the prototypes
 

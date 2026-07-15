@@ -1,6 +1,7 @@
 use arboard::Clipboard;
 use serde::Serialize;
 use std::{ffi::c_void, ptr, thread, time::Duration};
+use tauri::webview::PageLoadEvent;
 use tauri::{AppHandle, Manager};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
@@ -165,6 +166,15 @@ extern "C" {
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![insert_emoji, dismiss_palette])
+        .on_page_load(|webview, payload| {
+            if payload.event() == PageLoadEvent::Finished
+                && std::env::var_os("FETCHMOJI_SHOW_ON_LAUNCH").is_some()
+            {
+                if let Err(error) = show_palette(webview.app_handle()) {
+                    eprintln!("Could not show FetchMoji after page load: {error}");
+                }
+            }
+        })
         .setup(|app| {
             #[cfg(target_os = "macos")]
             {
@@ -196,9 +206,7 @@ pub fn run() {
                 )
             })?;
 
-            if std::env::var_os("FETCHMOJI_SHOW_ON_LAUNCH").is_some() {
-                show_palette(app.handle())?;
-            } else {
+            if std::env::var_os("FETCHMOJI_SHOW_ON_LAUNCH").is_none() {
                 hide_palette(app.handle())?;
             }
 

@@ -2,11 +2,22 @@ import { defineConfig } from 'vitest/config'
 import { playwright } from '@vitest/browser-playwright'
 import react from '@vitejs/plugin-react'
 
+const sourceRoot = decodeURIComponent(
+  new URL('./src', import.meta.url).pathname,
+)
+const sourceAlias = {
+  alias: {
+    '@': sourceRoot,
+  },
+}
+
 export default defineConfig({
   plugins: [react()],
+  resolve: sourceAlias,
   test: {
     projects: [
       {
+        resolve: sourceAlias,
         // Unit tests run in Node.js with jsdom
         test: {
           name: 'unit',
@@ -16,6 +27,7 @@ export default defineConfig({
         },
       },
       {
+        resolve: sourceAlias,
         // Browser tests run in real webkit
         test: {
           name: 'browser',
