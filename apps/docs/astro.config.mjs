@@ -105,6 +105,10 @@ export default defineConfig({
               label: "Extension build & review",
               slug: "research/chrome-extension-specs-boilerplates-rejections-quality-inventory-2026-07-11",
             },
+            {
+              label: "macOS desktop prototypes",
+              slug: "research/macos-emoji-palette-desktop-app-prototypes-2026-07-15",
+            },
           ],
         },
       ],

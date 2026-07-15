@@ -22,3 +22,7 @@ workspace `docs/research/` original becomes a reference stub pointing back.
 ## Browser extension
 
 - [Chrome extension specs, boilerplates, rejection risks, and quality inventory](/research/chrome-extension-specs-boilerplates-rejections-quality-inventory-2026-07-11/) — the WXT recommendation, official policy matrix, AI-assisted build safeguards, store assets, release gates, and the full quality checklist.
+
+## macOS desktop app
+
+- [Desktop app patterns, shortcut audit, and prototype plan](/research/macos-emoji-palette-desktop-app-prototypes-2026-07-15/) — the shared-renderer architecture, AppKit/Tauri/Electron comparison, automatic-insertion permission boundary, accessibility requirements, and the `⌃⌘.` default-shortcut decision.
