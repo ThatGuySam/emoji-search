@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/Button";
 import { Input } from "@/components/Input";
 import { ResultGrid } from "@/components/ResultGrid";
+import { RecentEmojiSection } from "@/components/RecentEmojiSection";
 import {
   Sheet,
   SheetContent,
@@ -40,6 +41,14 @@ import {
   buildEmojiCopyMessage,
   copyEmojiToClipboard,
 } from "@/lib/copyEmoji";
+import {
+  RECENT_EMOJIS_STORAGE_KEY,
+  addRecentEmoji,
+  loadRecentEmojis,
+  saveRecentEmojis,
+  type RecentEmoji,
+} from "@/lib/recentEmojis";
+import { mergeRecentEmojiResults } from "@/lib/recentEmojiResults";
 /**
  * App
  * Emoji semantic search UI using a worker
@@ -48,6 +57,11 @@ import {
 export function App() {
   const [query, setQuery] = useState("");
   const [spacerHeight, setSpacerHeight] = useState(0);
+  const [recentEmojis, setRecentEmojis] = useState<
+    RecentEmoji[]
+  >([]);
+  const [recentEmojisReady, setRecentEmojisReady] =
+    useState(false);
   const searchConfig = resolveSearchConfig();
 
   // Log cross-origin isolation status on mount
@@ -60,6 +74,25 @@ export function App() {
       hasAtomics: typeof Atomics !== "undefined",
       origin: location.origin,
     });
+  }, []);
+
+  useEffect(() => {
+    const syncRecentEmojis = () => {
+      setRecentEmojis(loadRecentEmojis());
+      setRecentEmojisReady(true);
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === RECENT_EMOJIS_STORAGE_KEY) {
+        syncRecentEmojis();
+      }
+    };
+
+    syncRecentEmojis();
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
   const [sheet, setSheet] = useState<{
     open: boolean;
@@ -95,7 +128,20 @@ export function App() {
    */
   const onCopy = (options: { char: string; name: string }) => {
     const { char, name } = options;
-    void copyEmojiToClipboard(char);
+    void copyEmojiToClipboard(char).then((copied) => {
+      if (!copied) {
+        return;
+      }
+
+      setRecentEmojis((current) => {
+        const next = addRecentEmoji(current, {
+          char,
+          name,
+        });
+
+        return saveRecentEmojis(next);
+      });
+    });
     setToast(buildEmojiCopyMessage({
       char,
       name,
@@ -108,10 +154,22 @@ export function App() {
     );
   };
 
-  const results = matched ?? [];
-  const isCentered = query === "" && results.length === 0;
+  const hasQuery = query.trim().length > 0;
+  const searchResults = matched ?? [];
+  const results =
+    hasQuery && !isSearching
+      ? mergeRecentEmojiResults(
+          searchResults,
+          recentEmojis,
+        )
+      : searchResults;
+  const isCentered =
+    recentEmojisReady &&
+    !hasQuery &&
+    results.length === 0 &&
+    recentEmojis.length === 0;
   const showResultsMeta =
-    query.length > 0 ||
+    hasQuery ||
     results.length > 0 ||
     isSearching ||
     Boolean(searchError);
@@ -175,15 +233,27 @@ export function App() {
       </header>
 
       <main className="min-h-0 overflow-y-auto p-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+        <h1 className="sr-only">Emoji search</h1>
+        {!hasQuery ? (
+          <RecentEmojiSection
+            emojis={recentEmojis}
+            onCopy={onCopy}
+            onMenu={(emoji) => setSheet({
+              open: true,
+              char: emoji.char,
+              name: emoji.name,
+            })}
+          />
+        ) : null}
         {showResultsMeta ? (
-          <div className="text-sm font-medium text-muted-foreground mb-2">
+          <h2 className="text-sm font-medium text-muted-foreground mb-2">
             Results
             {backendError ? (
               <span className="ml-2 text-xs font-normal text-amber-700">
                 fallback
               </span>
             ) : null}
-          </div>
+          </h2>
         ) : null}
         {searchError ? (
           <p

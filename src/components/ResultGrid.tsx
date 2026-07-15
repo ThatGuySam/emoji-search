@@ -1,4 +1,5 @@
 import { parseEmojiResult } from '../utils/emojiResult'
+import { EmojiButton } from './EmojiButton'
 
 export function ResultGrid(props: {
   results: string[]
@@ -20,29 +21,11 @@ export function ResultGrid(props: {
             key={row}
             className="list-none"
           >
-            <button
-              type="button"
-              aria-label={`Copy ${name} emoji`}
-              className="flex w-full items-center justify-center gap-1
-              min-h-11 min-w-11 p-2 rounded-2xl border bg-secondary
-              shadow-sm hover:shadow transition active:scale-95"
-              onClick={() => onCopy({
-                char,
-                name,
-              })}
-              onContextMenu={(e) => {
-                e.preventDefault()
-                onMenu({ char, name })
-              }}
-            >
-              <span
-                role="img"
-                aria-label={name}
-                className="text-[clamp(22px,4.6vh,32px)] leading-none"
-              >
-                {char}
-              </span>
-            </button>
+            <EmojiButton
+              emoji={{ char, name }}
+              onCopy={onCopy}
+              onMenu={onMenu}
+            />
           </li>
         )
       })}

@@ -2,6 +2,7 @@ import {
   buildEmojiCopyMessage,
   copyEmojiToClipboard,
 } from './copyEmoji'
+import { recordRecentEmoji } from './recentEmojis'
 
 const ROOT_SELECTOR = '[data-emoji-copy-root]'
 const BUTTON_SELECTOR = '[data-copy-emoji]'
@@ -38,7 +39,11 @@ function bindRoot(root: HTMLElement) {
       return
     }
 
-    await copyEmojiToClipboard(char)
+    const copied = await copyEmojiToClipboard(char)
+
+    if (copied) {
+      recordRecentEmoji({ char, name })
+    }
 
     if (!toast) {
       return
