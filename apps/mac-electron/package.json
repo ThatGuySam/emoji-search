@@ -1,0 +1,51 @@
+{
+  "name": "@fetchmoji/mac-electron",
+  "version": "0.1.0",
+  "description": "FetchMoji macOS emoji-palette Electron prototype",
+  "author": "FetchMoji",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.11.1",
+  "main": "src/main.mjs",
+  "scripts": {
+    "build:renderer": "pnpm --dir ../desktop-ui build",
+    "dev": "pnpm build:renderer && electron .",
+    "test": "node --test",
+    "check": "node --check src/main.mjs && node --check src/emoji.mjs && node --check src/preload.cjs && pnpm test",
+    "build": "pnpm build:renderer && electron-builder --mac dir"
+  },
+  "devDependencies": {
+    "electron": "^43.1.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.fetchmoji.prototype.electron",
+    "productName": "FetchMoji Electron",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../desktop-ui/dist",
+        "to": "desktop-ui",
+        "filter": ["**/*"]
+      }
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "target": ["dir"],
+      "category": "public.app-category.utilities",
+      "icon": "../mac-tauri/src-tauri/icons/icon.icns",
+      "identity": null,
+      "minimumSystemVersion": "14.0",
+      "extendInfo": {
+        "LSUIElement": true,
+        "NSAppleEventsUsageDescription": "FetchMoji asks System Events to paste the emoji you selected into the previously focused app."
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title">
+  <title id="title">FetchMoji prototype icon</title>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6857e5"/>
+      <stop offset="1" stop-color="#3c2e9e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#background)"/>
+  <circle cx="512" cy="512" r="292" fill="#ffffff"/>
+  <circle cx="410" cy="458" r="36" fill="#302676"/>
+  <circle cx="614" cy="458" r="36" fill="#302676"/>
+  <path d="M360 574c34 82 86 123 152 123s118-41 152-123" fill="none" stroke="#302676" stroke-linecap="round" stroke-width="42"/>
+  <path d="M776 198v184M684 290h184" fill="none" stroke="#f5ca52" stroke-linecap="round" stroke-width="36"/>
+</svg>
