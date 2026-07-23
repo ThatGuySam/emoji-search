@@ -34,6 +34,9 @@ new URL exists solely for wording variation.
 
 ## Phase 2 — Browser extension
 
+- Keep the working `apps/ext` WXT scaffold green: local keyword search, keyboard
+  navigation, copy fallback, the low-permission manifest, unit tests, production
+  build, and ZIP packaging are in place.
 - Extract or formalize the shared search contract and versioned artifact format.
 - Build the WXT + TypeScript + React Chrome Manifest V3 package with all
   executable JavaScript and WebAssembly bundled.
@@ -48,6 +51,11 @@ new URL exists solely for wording variation.
 **Exit:** every P0 release gate in the extension research memo passes; the
 extension survives trusted testing and store policy review without page-reading
 permissions, remote executable code, or query transmission.
+
+**Current status:** the development scaffold passes its local compile, unit,
+build, and ZIP gate. Semantic parity, packaged Chrome verification,
+accessibility automation, network evidence, approved store assets, and trusted
+testing remain before the phase can exit.
 
 ## Phase 3 — Authority assets
 

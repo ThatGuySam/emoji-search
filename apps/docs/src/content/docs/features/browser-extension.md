@@ -15,9 +15,21 @@ sidebar:
 - `Go deeper:` Review the permission boundary, update states, and packaging questions.
 
 The browser extension turns FetchMoji from a destination into a reusable writing
-tool. It provides the same private search in a compact surface without reading
-the current page. The first implementation uses WXT, TypeScript, and React to
-produce one Chrome Manifest V3 package.
+tool. It provides private search in a compact surface without reading the
+current page. WXT, TypeScript, and React produce one Chrome Manifest V3 package.
+
+## Current implementation
+
+The repository contains a working development scaffold at `apps/ext`. It opens
+from the toolbar or the `_execute_action` command, focuses a labeled search
+field, ranks the bundled `emojilib` catalog with deterministic keyword matching,
+supports arrow-key navigation, and copies a selected emoji with a manual-copy
+fallback.
+
+This scaffold is not the finished semantic-search feature and is not ready for
+Chrome Web Store submission. It makes no network requests and declares only
+`clipboardWrite`; it has no host permissions, content script, background
+service worker, page reading, analytics, account, or remote code.
 
 ## Behavior
 
@@ -38,10 +50,12 @@ produce one Chrome Manifest V3 package.
 - **Inputs:** explicit user text in the extension field, optional locale, result
   limit, and the configured command shortcut.
 - **Outputs:** ranked emoji results and a clipboard write after selection.
-- **Permissions:** `storage` only when the shipped implementation calls
-  `chrome.storage`; `clipboardWrite` only when a packaged Chrome test proves it
-  is required. No host permissions, `activeTab`, tab content, history, cookies,
-  scripting, or page-reading permission.
+- **Permissions:** the development scaffold declares `clipboardWrite` for an
+  explicit copy action. Keep it only if packaged Chrome testing proves it is
+  required and the permission warning matches the store disclosure. Add
+  `storage` only when shipped code calls `chrome.storage`. No host permissions,
+  `activeTab`, tab content, history, cookies, scripting, or page-reading
+  permission.
 
 ## States & edge cases
 
@@ -81,6 +95,40 @@ produce one Chrome Manifest V3 package.
   assets, a clean-profile network trace, update/offline/uninstall evidence, and
   an owned support and rollback path.
 
+## Test the development scaffold
+
+Install and start WXT from the extension app:
+
+```bash
+cd apps/ext
+pnpm install --ignore-workspace
+pnpm dev
+```
+
+For a production-like package, run:
+
+```bash
+pnpm check
+```
+
+Then open `chrome://extensions`, enable **Developer mode**, choose **Load
+unpacked**, and select `apps/ext/.output/chrome-mv3`.
+
+The manual smoke test:
+
+1. Pin FetchMoji and open the popup.
+2. Search for `rocket`; verify that 🚀 appears.
+3. Use Arrow Down and Arrow Up to move between the input and results.
+4. Select 🚀, paste into a local text field, and verify the copy status.
+5. Open the popup with `Ctrl+Shift+E` or `Command+Shift+E`.
+6. Repeat with networking disabled.
+7. Check dark mode, browser zoom, the empty state, a no-match query, and the
+   manual-copy fallback.
+
+The HTTP-served popup has been visually smoke-tested, but that does not prove
+extension-context clipboard behavior, the permission warning, or the configured
+shortcut. Those checks require the unpacked production build in Chrome.
+
 ## Data shape
 
 ```ts
@@ -119,6 +167,9 @@ type ExtensionArtifact = {
 - **2026-07-11 — Store evidence is a first-class artifact.** The product
   repository maintains `CHROMEWEBSTORE.md` and derives disclosures from tested
   behavior instead of generated intent.
+- **2026-07-11 — Keyword matching is an interim scaffold, not the search
+  contract.** It makes the popup testable while the website's typed semantic
+  search and artifact adapter are extracted into a shared package.
 
 ## Open question
 

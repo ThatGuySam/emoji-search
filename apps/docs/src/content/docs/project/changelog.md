@@ -5,10 +5,23 @@ description: A dated record of FetchMoji growth-spec changes and the evidence th
 
 ## SBC4
 
-- `Tease:` The growth spec starts with one evidence-backed baseline.
-- `Lede:` The initial entry records the canonical research move, planned contracts, settled channel sequence, and remaining decisions.
+- `Tease:` The spec now distinguishes the working extension scaffold from the semantic-search release target.
+- `Lede:` The record covers the evidence-backed growth baseline, settled channel sequence, implemented Manifest V3 shell, and remaining release evidence.
 - `Why it matters:` Later implementation changes have a dated surface to update.
 - `Go deeper:` Compare future entries against the 2026-07-11 baseline.
+
+## 2026-07-23
+
+- Recorded the implemented `apps/ext` WXT development scaffold separately from
+  the planned shared semantic-search contract.
+- Documented the current low-permission boundary: packaged local keyword data,
+  `clipboardWrite`, and no host permissions, page reading, background worker,
+  analytics, account, or query transmission.
+- Added the repeatable development, production-build, load-unpacked, and manual
+  Chrome smoke-test path.
+- Made the remaining evidence explicit: extension-context clipboard and shortcut
+  behavior, accessibility automation, packaged-browser E2E, clean-profile
+  network trace, final store assets, and trusted testing are not yet verified.
 
 ## 2026-07-11
 

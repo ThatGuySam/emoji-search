@@ -5,7 +5,7 @@ description: The unresolved forks a build agent must ask about, followed by the 
 
 ## SBC4
 
-- `Tease:` Eight material forks remain open; eleven strategy decisions are settled.
+- `Tease:` Eight material forks remain open; twelve strategy decisions are settled.
 - `Lede:` The page tells a build agent exactly where to ask rather than silently choosing a privacy, performance, localization, or platform policy.
 - `Why it matters:` The anti-hallucination surface is only useful when resolved items move out of Open.
 - `Go deeper:` Resolve product success and telemetry boundaries before implementation reaches them.
@@ -63,3 +63,6 @@ description: The unresolved forks a build agent must ask about, followed by the 
   and ranking compatibility.
 - **2026-07-11 — `CHROMEWEBSTORE.md` is required release evidence.** Permission,
   privacy, remote-code, listing, and reviewer facts must follow tested behavior.
+- **2026-07-11 — The first extension milestone uses deterministic local keyword
+  matching.** This makes the Manifest V3 shell testable without pretending it
+  has semantic parity; the shared search contract remains a Phase 2 gate.

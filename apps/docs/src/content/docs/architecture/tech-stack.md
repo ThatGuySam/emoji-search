@@ -40,6 +40,13 @@ startup evidence requires it, but both declare the same schema and ranking
 compatibility. The extension bundles every executable JavaScript and WebAssembly
 file; a remotely fetched model or index is inert, immutable data only.
 
+The current `apps/ext` development scaffold deliberately precedes that shared
+package. It bundles `emojilib` and deterministic keyword ranking directly in the
+extension so the Manifest V3 shell, popup interaction, accessibility behavior,
+copy path, and packaging boundary can be tested independently. Replacing that
+interim search module with the shared semantic contract is the next architecture
+step, not an optional quality improvement.
+
 ## Build and release constraints
 
 - Every artifact is content-addressed or carries a version plus checksum.
@@ -66,6 +73,11 @@ file; a remotely fetched model or index is inert, immutable data only.
   dependency and secret scan, and exact ZIP inventory.
 - **Submission:** trusted-test package, human-reviewed `CHROMEWEBSTORE.md`, store
   assets, reviewer steps, rollback package, and release provenance.
+
+The scaffold's `pnpm check` gate runs TypeScript compilation, unit tests, the
+production Chrome Manifest V3 build, and ZIP creation. It does not replace
+packaged-browser E2E, accessibility automation, a clean-profile network trace,
+or manual verification of clipboard and shortcut behavior.
 
 ## Performance strategy
 
