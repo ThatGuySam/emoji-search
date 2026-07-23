@@ -66,6 +66,25 @@ testing remain before the phase can exit.
 **Exit:** the product has at least one original, citeable asset for language and
 one for developers.
 
+## Parallel prototype track — macOS desktop palette
+
+- Keep AppKit, Tauri, and Electron on the one shared website interface and
+  desktop host contract.
+- Run focus, shortcut, insertion, copy-only fallback, VoiceOver, Full Keyboard
+  Access, and secure-field tests across representative native, browser,
+  Electron, and editor inputs.
+- Choose the release shell from measured reliability, bundle, permission, and
+  distribution evidence.
+- Add shortcut reassignment, collision recovery, launch-at-login, and a
+  menu-bar recovery surface.
+- Produce signed/notarized universal packaging and verify the chosen
+  distribution route. Treat successful local compilation as no evidence of Mac
+  App Store eligibility.
+
+**Exit:** one shell passes the real-app matrix, its permission and distribution
+claims match observed behavior, and the project has an explicit priority
+relative to the Chrome extension.
+
 ## Phase 4 — Launch sequence
 
 - Publish the Chrome Web Store listing and a concise product demonstration.

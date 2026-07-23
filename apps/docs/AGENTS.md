@@ -25,7 +25,9 @@ can be reviewed before implementation.
   choice. Ask the human about items under **Open**; do not silently resolve them.
 - Preserve the explicit decisions: query text stays local, native review gates
   localized advice, Chrome is the first extension surface, and Product Hunt is
-  secondary.
+  secondary. The website and macOS prototypes share `EmojiSearchView`, while the
+  desktop controller keeps its bundled local index and two-method native host
+  boundary.
 - For extension work, use WXT + TypeScript + React, keep the search package
   UI-independent, bundle all executable JavaScript and WebAssembly, and maintain
   a human-reviewed `CHROMEWEBSTORE.md` from the start.

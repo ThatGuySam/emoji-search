@@ -23,6 +23,24 @@ description: A dated record of FetchMoji growth-spec changes and the evidence th
   behavior, accessibility automation, packaged-browser E2E, clean-profile
   network trace, final store assets, and trusted testing are not yet verified.
 
+## 2026-07-15
+
+- Published the AppKit, Tauri, and Electron comparison, shortcut audit,
+  automatic-insertion permission boundary, and prototype release gates in
+  Research.
+- Added three runnable macOS host prototypes and one local desktop renderer in
+  [`8b232fb`](https://github.com/ThatGuySam/emoji-search/commit/8b232fb8e2fd3f02ee32e82cfac137d10f5100cb).
+- Replaced the prototype-only interface with the website's actual shared
+  `EmojiSearchView` and root stylesheet in
+  [`751be76`](https://github.com/ThatGuySam/emoji-search/commit/751be760398c7600e5abd620bd1659f313edd803).
+- Preserved the website's semantic-search controller while keeping desktop
+  queries on a bundled keyword controller behind the same view props.
+- Verified keyboard focus retention, modifier and input-method passthrough,
+  copy-before-hide insertion behavior, launch readiness, package builds, and
+  local Apple Silicon bundle measurements.
+- Left shell selection, real-app verification, shortcut settings, signed
+  distribution, and Mac App Store acceptance explicitly open.
+
 ## 2026-07-11
 
 - Created the FetchMoji growth docs/spec site.

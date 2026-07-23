@@ -5,7 +5,7 @@ description: The unresolved forks a build agent must ask about, followed by the 
 
 ## SBC4
 
-- `Tease:` Eight material forks remain open; twelve strategy decisions are settled.
+- `Tease:` Material product and desktop forks remain explicit; settled decisions follow.
 - `Lede:` The page tells a build agent exactly where to ask rather than silently choosing a privacy, performance, localization, or platform policy.
 - `Why it matters:` The anti-hallucination surface is only useful when resolved items move out of Open.
 - `Go deeper:` Resolve product success and telemetry boundaries before implementation reaches them.
@@ -37,6 +37,17 @@ description: The unresolved forks a build agent must ask about, followed by the 
 - Is there demonstrated demand for a networked read-only API, and how would its
   explicit privacy boundary differ from local search?
 
+### macOS desktop distribution
+
+- Which of AppKit or Tauri passes the real-app focus and insertion matrix well
+  enough to become the release candidate?
+- Does the release use posted Command-V events, another native insertion
+  mechanism, or an input-method architecture?
+- What settings and menu-bar recovery surface owns shortcut reassignment,
+  collision recovery, and launch-at-login?
+- Where does a desktop release rank against the Chrome extension in the product
+  roadmap?
+
 ## Decided
 
 - **2026-07-11 — The live product remains the baseline; this site specifies its
@@ -44,6 +55,19 @@ description: The unresolved forks a build agent must ask about, followed by the 
   implements the new behavior.
 - **2026-07-11 — Search queries and ranking remain local.** Performance work must
   preserve that boundary.
+- **2026-07-15 — The website and desktop palette share the real search
+  interface.** Both render `EmojiSearchView` and the root theme; the desktop
+  does not maintain a copied UI.
+- **2026-07-15 — The desktop search controller stays local and separate from the
+  website runtime.** It uses bundled keyword data rather than loading the
+  production semantic-search controller into a privileged webview.
+- **2026-07-15 — `⌃⌘.` is the desktop prototype default.** It avoids the
+  reviewed macOS, launcher, password-manager, editor, and VoiceOver defaults and
+  reports registration failure visibly.
+- **2026-07-15 — AppKit, Tauri, and Electron have explicit comparison roles.**
+  AppKit is the reliability reference, Tauri the small-distribution candidate,
+  and Electron the compatibility baseline; real-app evidence chooses the release
+  shell.
 - **2026-07-11 — Demand-led SEO precedes URL expansion.** Improve pages already
   earning impressions before creating additional phrase variants.
 - **2026-07-11 — Native review gates localized advice.** Machine translation

@@ -55,6 +55,7 @@ export default defineConfig({
           badge: { text: "Planned", variant: "note" },
           items: [
             { label: "Semantic search", slug: "features/semantic-search" },
+            { label: "macOS desktop palette", slug: "features/macos-desktop-palette" },
             { label: "Intent pages", slug: "features/intent-pages" },
             { label: "Browser extension", slug: "features/browser-extension" },
             { label: "Privacy & measurement", slug: "features/privacy-measurement" },

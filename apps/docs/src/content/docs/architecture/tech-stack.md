@@ -1,12 +1,12 @@
 ---
 title: Tech stack
-description: FetchMoji separates crawlable static answers, local search runtime, extension packaging, and private docs into explicit delivery surfaces.
+description: FetchMoji separates crawlable static answers, local search runtime, desktop and extension packaging, and private docs into explicit delivery surfaces.
 ---
 
 ## SBC4
 
-- `Tease:` Four delivery surfaces share one search contract without sharing one release cycle.
-- `Lede:` Crawlable HTML, a local worker runtime, a Manifest V3 extension, and the private docs spec stay explicit and independently deployable.
+- `Tease:` Five delivery surfaces share explicit contracts without sharing one release cycle.
+- `Lede:` Crawlable HTML, local search runtimes, the macOS palette, a Manifest V3 extension, and the private docs spec stay explicit and independently deployable.
 - `Why it matters:` The architecture preserves privacy while fixing cold-start and distribution constraints.
 - `Go deeper:` Review runtime boundaries, release constraints, and the open performance budget.
 
@@ -16,6 +16,7 @@ description: FetchMoji separates crawlable static answers, local search runtime,
 | --- | --- | --- |
 | `fetchmoji.com` | Public search and intent pages | Astro static/server-rendered HTML with a client search island |
 | Search runtime | Query ranking and local artifacts | Web Worker, compact initial artifact, lazy full local corpus, clipboard adapter |
+| macOS desktop palette | Global keyboard workflow and cross-app insertion | Shared React renderer inside AppKit, Tauri, and Electron prototype hosts |
 | Browser extension | Repeated writing workflow | WXT + TypeScript + React, Chrome Manifest V3 popup/command, production ZIP |
 | Docs spec | Review and build context | Astro Starlight at `fetchmoji.docs.samcarlton.com` with `/llms-full.txt` |
 | Edge | Static delivery and crawler policy | Cloudflare assets, immutable hashed files, sitemap, robots, and explicit headers |
@@ -34,6 +35,17 @@ No default search endpoint receives query text. The website and extension share
 typed request/result contracts and versioned artifacts so ranking behavior can
 be tested across both surfaces.
 
+The website and macOS prototypes share presentation directly. Both render
+`src/components/EmojiSearchView.tsx` with the root Tailwind theme. The desktop
+controller packages a bundled `emojilib` index instead of the website's
+semantic model and database runtime. All three native hosts consume
+`apps/desktop-ui/dist` and expose only `insertEmoji` and `dismiss`.
+
+AppKit serves the static renderer through a private read-only
+`fetchmoji://app/` scheme. Tauri uses a command allowlist and restrictive CSP.
+Electron keeps Node integration disabled, enables context isolation and
+renderer sandboxing, and validates IPC senders against the bundled renderer.
+
 The search/ranking package remains independent of Astro, React, and WXT. The
 website and extension can package different initial data artifacts when size or
 startup evidence requires it, but both declare the same schema and ranking
@@ -51,6 +63,11 @@ step, not an optional quality improvement.
 
 - Every artifact is content-addressed or carries a version plus checksum.
 - The website can deploy content without forcing an extension release.
+- A desktop build installs the root website dependencies before the app-local
+  renderer toolchain, then packages the same `desktop-ui/dist` in every shell.
+- The native hosts validate selections, copy before hiding, and report
+  copy-only behavior instead of claiming insertion when macOS permission is
+  unavailable.
 - An extension package declares compatible artifact/schema versions.
 - The product repository maintains `CHROMEWEBSTORE.md` as the reviewed source
   for purpose, permission, privacy, remote-code, listing, and reviewer facts.
