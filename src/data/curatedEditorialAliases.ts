@@ -144,4 +144,20 @@ export const curatedEditorialAliases = new Map<
       'thinking about you',
     ],
   ],
+  [
+    '📎',
+    [
+      'attach',
+      'attachment',
+      'attach a file',
+    ],
+  ],
+  [
+    '🖇️',
+    [
+      'attach',
+      'attached',
+      'clip together',
+    ],
+  ],
 ])
