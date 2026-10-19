@@ -6,6 +6,8 @@ import {
   useState,
 } from 'react'
 
+import { promotedSearches } from '../data/promotedSearches'
+
 import type { RecentEmoji } from '@/lib/recentEmojis'
 
 import { Button } from './Button'
@@ -188,17 +190,11 @@ function SearchHeader(props: {
   } = props
   const localInputRef = useRef<HTMLInputElement | null>(null)
   const inputRef = externalInputRef ?? localInputRef
-  const chips = (!query ? [
-    'shout',
-    'attach',
-    'copy',
-    'celebrate',
-    'secure',
-    'search',
-  ] : []).slice(0, 6)
+  const chips = !query ? promotedSearches : []
 
   useEffect(() => {
     if (!inputRef.current) return
+
     if (document.activeElement === inputRef.current) return
 
     inputRef.current.focus({
