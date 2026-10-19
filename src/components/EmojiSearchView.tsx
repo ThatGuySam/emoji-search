@@ -195,6 +195,13 @@ function SearchHeader(props: {
   useEffect(() => {
     if (!inputRef.current) return
 
+    // Keystrokes typed into the server-rendered input
+    // before hydration would otherwise be dropped.
+    const typedBeforeHydration = inputRef.current.value
+    if (typedBeforeHydration && !query) {
+      onChange(typedBeforeHydration)
+    }
+
     if (document.activeElement === inputRef.current) return
 
     inputRef.current.focus({
