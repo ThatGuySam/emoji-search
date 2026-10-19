@@ -79,8 +79,16 @@ function createMockDeps(options: {
     dbResolve,
     /** Simulate worker sending a message */
     sendWorkerMessage: (data: unknown) => {
+      const message = data as { status?: string, requestId?: number }
+      const lastQuery = mockWorker.postMessage.mock.calls
+        .map(([posted]) => posted as { requestId?: number })
+        .findLast((posted) => posted.requestId !== undefined)
       if (messageHandler) {
-        messageHandler({ data })
+        messageHandler({
+          data: message.status === 'complete' && !('requestId' in message)
+            ? { ...message, requestId: lastQuery?.requestId }
+            : data,
+        })
       }
     },
   }
@@ -169,6 +177,7 @@ describe('EmojiSearchCore', () => {
       expect(core.isSearching).toBe(true)
 
       // Simulate search complete
+      await new Promise((r) => setTimeout(r, 200))
       sendWorkerMessage({
         status: 'complete',
         embedding: new Array(384).fill(0.1),
@@ -188,7 +197,7 @@ describe('EmojiSearchCore', () => {
         // This is the iOS Safari scenario:
         // Model finishes fast, DB is slow
         const { deps, sendWorkerMessage } = createMockDeps({
-          dbLoadDelay: 100, // Slow DB
+          dbLoadDelay: 400, // Slow DB
         })
 
         const core = new EmojiSearchCore({
@@ -209,6 +218,7 @@ describe('EmojiSearchCore', () => {
         expect(core.isSearching).toBe(true)
 
         // Worker completes embedding quickly
+        await new Promise((r) => setTimeout(r, 200))
         sendWorkerMessage({
           status: 'complete',
           embedding: new Array(384).fill(0.1),
@@ -222,7 +232,7 @@ describe('EmojiSearchCore', () => {
         // Wait for DB to finish loading
         await vi.waitFor(
           () => expect(core.dbReady).toBe(true),
-          { timeout: 200 }
+          { timeout: 800 }
         )
 
         // Now search should complete
@@ -251,6 +261,7 @@ describe('EmojiSearchCore', () => {
         await core.initialize()
         core.classify('hello')
 
+        await new Promise((r) => setTimeout(r, 200))
         sendWorkerMessage({
           status: 'complete',
           embedding: new Array(384).fill(0.1),
@@ -318,6 +329,7 @@ describe('EmojiSearchCore', () => {
       core.classify('test')
 
       // Should NOT throw - should wait for DB
+      await new Promise((r) => setTimeout(r, 200))
       expect(() => {
         sendWorkerMessage({
           status: 'complete',
@@ -328,7 +340,7 @@ describe('EmojiSearchCore', () => {
       // Wait for everything to complete
       await vi.waitFor(
         () => expect(core.matched).not.toBeNull(),
-        { timeout: 200 }
+        { timeout: 800 }
       )
 
       expect(core.matched).toContain('🎉 party')
@@ -336,7 +348,7 @@ describe('EmojiSearchCore', () => {
 
     it('queues work properly when DB loads after query', async () => {
       const { deps, sendWorkerMessage } = createMockDeps({
-        dbLoadDelay: 100,
+        dbLoadDelay: 400,
       })
 
       const core = new EmojiSearchCore({
@@ -348,6 +360,7 @@ describe('EmojiSearchCore', () => {
 
       // Fire multiple queries before DB ready
       core.classify('first')
+      await new Promise((r) => setTimeout(r, 200))
       sendWorkerMessage({
         status: 'complete',
         embedding: new Array(384).fill(0.1),
@@ -359,7 +372,7 @@ describe('EmojiSearchCore', () => {
       // Wait for DB and search to complete
       await vi.waitFor(
         () => expect(core.isSearching).toBe(false),
-        { timeout: 200 }
+        { timeout: 800 }
       )
 
       expect(core.matched).toContain('🎉 party')
@@ -383,6 +396,36 @@ describe('EmojiSearchCore', () => {
         'message',
         expect.any(Function)
       )
+    })
+  })
+
+  describe('stale results', () => {
+    it('shows the latest query when an earlier query answers last', async () => {
+      const { deps, mockWorker, sendWorkerMessage } = createMockDeps()
+      deps.search = vi.fn(async (_db, embedding: number[]) =>
+        [{ identifier: embedding[0] === 1 ? '🗣️ latest' : '🥡 stale' }])
+
+      const core = new EmojiSearchCore({ deps, onStateChange: () => {} })
+      await core.initialize()
+      await vi.waitFor(() => expect(core.dbReady).toBe(true))
+
+      core.classify('s')
+      await new Promise((r) => setTimeout(r, 200))
+      core.classify('shout')
+      await new Promise((r) => setTimeout(r, 200))
+
+      const queries = mockWorker.postMessage.mock.calls
+        .map(([data]) => data as { text?: string, requestId?: number })
+        .filter((data) => data.text)
+      const stale = queries.find((q) => q.text === 's')!
+      const latest = queries.find((q) => q.text === 'shout')!
+
+      sendWorkerMessage({ status: 'complete', requestId: latest.requestId, embedding: [1] })
+      await vi.waitFor(() => expect(core.matched).toEqual(['🗣️ latest']))
+      sendWorkerMessage({ status: 'complete', requestId: stale.requestId, embedding: [0] })
+      await new Promise((r) => setTimeout(r, 50))
+
+      expect(core.matched).toEqual(['🗣️ latest'])
     })
   })
 })

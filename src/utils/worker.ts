@@ -79,26 +79,32 @@ class PipelineSingleton {
   static task = 'feature-extraction' as const
   // Path to the model on the remote host
   static model = `${DEFAULT_MODEL}` as const
-  static instance: FeatureExtractionPipeline | null = null
+  static instance: Promise<FeatureExtractionPipeline> | null = null
 
-  static async getInstance(
+  // Cache the in-flight promise so the preload and queries typed
+  // during a cold load share one model download and ONNX session.
+  static getInstance(
     progress_callback?: (data: unknown) => void,
     noCache?: boolean,
   ): Promise<FeatureExtractionPipeline> {
     if (this.instance === null) {
       configureWorkerModelEnv(noCache)
-      const created = await pipeline(
+      this.instance = pipeline(
         this.task,
         this.model,
         defaultPipelineOptions({
           progress_callback,
         })
+      ).then(
+        // Narrow the giant union type to
+        // the specific feature-extraction
+        // pipeline to avoid TS union blowup
+        (created) => created as unknown as FeatureExtractionPipeline,
+        (error) => {
+          this.instance = null
+          throw error
+        },
       )
-      // Narrow the giant union type to
-      // the specific feature-extraction
-      // pipeline to avoid TS union blowup
-      this.instance = created as unknown as
-        FeatureExtractionPipeline
     }
     return this.instance
   }
@@ -110,10 +116,11 @@ class PipelineSingleton {
    */
   static async dispose(): Promise<void> {
     if (this.instance) {
+      const instance = this.instance
+      this.instance = null
       // dispose() frees the underlying ONNX
       // session and associated GPU/WASM memory
-      await this.instance.dispose()
-      this.instance = null
+      await (await instance).dispose()
     }
   }
 }
@@ -165,6 +172,7 @@ self.addEventListener('message', async (event) => {
     // Send the output back to the main thread
     self.postMessage({
       status: 'complete',
+      requestId: data.requestId,
       embedding,
     })
   } catch (error) {

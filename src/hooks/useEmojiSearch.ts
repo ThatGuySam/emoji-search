@@ -82,6 +82,7 @@ interface WorkerMessage {
     | 'complete'
     | 'error'
   embedding?: number[]
+  requestId?: number
   error?: string
 }
 
@@ -120,6 +121,7 @@ export class EmojiSearchCore {
   private debounceTimer: ReturnType<
     typeof setTimeout
   > | null = null
+  private latestRequestId = 0
 
   constructor(options: {
     deps: EmojiSearchDeps
@@ -214,6 +216,7 @@ export class EmojiSearchCore {
         return
 
       case 'complete': {
+        if (message.requestId !== this.latestRequestId) return
         try {
           // Embedding complete, now search DB
           // Wait for DB if not ready yet
@@ -234,6 +237,7 @@ export class EmojiSearchCore {
             db,
             message.embedding
           )
+          if (message.requestId !== this.latestRequestId) return
           this.matched = results.map((r) => r.identifier)
           this.errorMessage = null
           this.isSearching = false
@@ -262,6 +266,8 @@ export class EmojiSearchCore {
       this.debounceTimer = null
     }
 
+    const requestId = ++this.latestRequestId
+
     if (!text.trim()) {
       this.matched = null
       this.isSearching = false
@@ -279,6 +285,7 @@ export class EmojiSearchCore {
       this.debounceTimer = null
       this.worker.postMessage({
         text,
+        requestId,
         noCache: options.noCache,
       })
     }, DEBOUNCE_DELAY_MS)
