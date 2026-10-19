@@ -1,0 +1,245 @@
+{
+  "baseUrl": "http://localhost:8799/",
+  "engine": "chrome (fresh on-disk profile per run)",
+  "device": "Pixel 7 (emulated)",
+  "checkedAt": "2026-10-17T22:06:49.936Z",
+  "runs": 5,
+  "failedRuns": 0,
+  "runsDetail": [
+    {
+      "index": 0,
+      "queries": {
+        "shout": {
+          "ok": true,
+          "ms": 12757,
+          "inputValue": "shout",
+          "top": [
+            "🗣️ speaking head",
+            "💬 speech balloon",
+            "💥 collision",
+            "🔊 speaker high volume",
+            "📢 loudspeaker",
+            "🗯️ right anger bubble",
+            "💓 beating heart",
+            "💣 bomb",
+            "🪃 boomerang",
+            "🔈 speaker low volume"
+          ]
+        },
+        "attach": {
+          "ok": true,
+          "ms": 1636,
+          "inputValue": "attach",
+          "top": [
+            "📎 paperclip",
+            "🩹 adhesive bandage",
+            "🖇️ linked paperclips",
+            "🎗️ reminder ribbon",
+            "📌 pushpin",
+            "🎀 ribbon",
+            "🪑 chair",
+            "🪢 knot",
+            "🩼 crutch",
+            "🫵 index pointing at the viewer"
+          ]
+        }
+      },
+      "errors": [],
+      "isolation": {
+        "crossOriginIsolated": true,
+        "sharedArrayBuffer": true,
+        "webgpu": true
+      },
+      "totalMs": 14482,
+      "browserVersion": "155.0.8059.82"
+    },
+    {
+      "index": 1,
+      "queries": {
+        "shout": {
+          "ok": true,
+          "ms": 11750,
+          "inputValue": "shout",
+          "top": [
+            "🗣️ speaking head",
+            "💬 speech balloon",
+            "💥 collision",
+            "🔊 speaker high volume",
+            "📢 loudspeaker",
+            "🗯️ right anger bubble",
+            "💓 beating heart",
+            "💣 bomb",
+            "🪃 boomerang",
+            "🔈 speaker low volume"
+          ]
+        },
+        "attach": {
+          "ok": true,
+          "ms": 1627,
+          "inputValue": "attach",
+          "top": [
+            "📎 paperclip",
+            "🩹 adhesive bandage",
+            "🖇️ linked paperclips",
+            "🎗️ reminder ribbon",
+            "📌 pushpin",
+            "🎀 ribbon",
+            "🪑 chair",
+            "🪢 knot",
+            "🩼 crutch",
+            "🫵 index pointing at the viewer"
+          ]
+        }
+      },
+      "errors": [],
+      "isolation": {
+        "crossOriginIsolated": true,
+        "sharedArrayBuffer": true,
+        "webgpu": true
+      },
+      "totalMs": 13466,
+      "browserVersion": "155.0.8059.82"
+    },
+    {
+      "index": 2,
+      "queries": {
+        "shout": {
+          "ok": true,
+          "ms": 11756,
+          "inputValue": "shout",
+          "top": [
+            "🗣️ speaking head",
+            "💬 speech balloon",
+            "💥 collision",
+            "🔊 speaker high volume",
+            "📢 loudspeaker",
+            "🗯️ right anger bubble",
+            "💓 beating heart",
+            "💣 bomb",
+            "🪃 boomerang",
+            "🔈 speaker low volume"
+          ]
+        },
+        "attach": {
+          "ok": true,
+          "ms": 1629,
+          "inputValue": "attach",
+          "top": [
+            "📎 paperclip",
+            "🩹 adhesive bandage",
+            "🖇️ linked paperclips",
+            "🎗️ reminder ribbon",
+            "📌 pushpin",
+            "🎀 ribbon",
+            "🪑 chair",
+            "🪢 knot",
+            "🩼 crutch",
+            "🫵 index pointing at the viewer"
+          ]
+        }
+      },
+      "errors": [],
+      "isolation": {
+        "crossOriginIsolated": true,
+        "sharedArrayBuffer": true,
+        "webgpu": true
+      },
+      "totalMs": 13483,
+      "browserVersion": "155.0.8059.82"
+    },
+    {
+      "index": 3,
+      "queries": {
+        "shout": {
+          "ok": true,
+          "ms": 11746,
+          "inputValue": "shout",
+          "top": [
+            "🗣️ speaking head",
+            "💬 speech balloon",
+            "💥 collision",
+            "🔊 speaker high volume",
+            "📢 loudspeaker",
+            "🗯️ right anger bubble",
+            "💓 beating heart",
+            "💣 bomb",
+            "🪃 boomerang",
+            "🔈 speaker low volume"
+          ]
+        },
+        "attach": {
+          "ok": true,
+          "ms": 1624,
+          "inputValue": "attach",
+          "top": [
+            "📎 paperclip",
+            "🩹 adhesive bandage",
+            "🖇️ linked paperclips",
+            "🎗️ reminder ribbon",
+            "📌 pushpin",
+            "🎀 ribbon",
+            "🪑 chair",
+            "🪢 knot",
+            "🩼 crutch",
+            "🫵 index pointing at the viewer"
+          ]
+        }
+      },
+      "errors": [],
+      "isolation": {
+        "crossOriginIsolated": true,
+        "sharedArrayBuffer": true,
+        "webgpu": true
+      },
+      "totalMs": 13452,
+      "browserVersion": "155.0.8059.82"
+    },
+    {
+      "index": 4,
+      "queries": {
+        "shout": {
+          "ok": true,
+          "ms": 11777,
+          "inputValue": "shout",
+          "top": [
+            "🗣️ speaking head",
+            "💬 speech balloon",
+            "💥 collision",
+            "🔊 speaker high volume",
+            "📢 loudspeaker",
+            "🗯️ right anger bubble",
+            "💓 beating heart",
+            "💣 bomb",
+            "🪃 boomerang",
+            "🔈 speaker low volume"
+          ]
+        },
+        "attach": {
+          "ok": true,
+          "ms": 1624,
+          "inputValue": "attach",
+          "top": [
+            "📎 paperclip",
+            "🩹 adhesive bandage",
+            "🖇️ linked paperclips",
+            "🎗️ reminder ribbon",
+            "📌 pushpin",
+            "🎀 ribbon",
+            "🪑 chair",
+            "🪢 knot",
+            "🩼 crutch",
+            "🫵 index pointing at the viewer"
+          ]
+        }
+      },
+      "errors": [],
+      "isolation": {
+        "crossOriginIsolated": true,
+        "sharedArrayBuffer": true,
+        "webgpu": true
+      },
+      "totalMs": 13490,
+      "browserVersion": "155.0.8059.82"
+    }
+  ]
+}
