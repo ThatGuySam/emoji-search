@@ -17,6 +17,8 @@ const PROTECTED_PATHS = new Set([
 const CDN_ORIGIN = 'https://cdn.fetchmoji.com';
 const DB_PROXY_PREFIX = '/proxy/db/';
 const MODEL_PROXY_PREFIX = '/proxy/models/';
+const PROXY_EDGE_TTL_SECONDS = 60 * 60 * 24 * 30;
+const PROXY_BROWSER_TTL_SECONDS = 60 * 60 * 24 * 7;
 const LOCALIZED_INTENT_REDIRECTS = new Map(
   listLocalizedIntentSlugRedirects().flatMap(({ from, to }) => {
     const normalizedFrom = from.endsWith('/') ? from : `${from}/`;
@@ -87,14 +89,25 @@ export default {
     }
 
     // Serve proxied CDN assets or compiled Astro output.
+    // Cloudflare skips caching unknown extensions such as
+    // .onnx, so without cacheEverything every cold visitor
+    // pulls the ~34 MB model from R2.
     let res = proxyTarget
       ? await fetch(
           new Request(proxyTarget, request),
+          { cf: { cacheEverything: true, cacheTtl: PROXY_EDGE_TTL_SECONDS } },
         )
       : await env.ASSETS.fetch(request);
 
     // Clone response to add headers
     res = new Response(res.body, res);
+
+    if (proxyTarget && res.ok) {
+      res.headers.set(
+        'Cache-Control',
+        `public, max-age=${PROXY_BROWSER_TTL_SECONDS}`,
+      );
+    }
 
     // Enable cross-origin isolation for SharedArrayBuffer
     // (required for ONNX Runtime multi-threading)
