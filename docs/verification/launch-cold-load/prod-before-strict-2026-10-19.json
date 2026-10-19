@@ -1,0 +1,151 @@
+{
+  "baseUrl": "https://fetchmoji.com/",
+  "engine": "chrome (fresh on-disk profile per run)",
+  "device": "Pixel 7 (emulated)",
+  "checkedAt": "2026-10-19T15:08:06.388Z",
+  "runs": 3,
+  "failedRuns": 3,
+  "runsDetail": [
+    {
+      "index": 0,
+      "queries": {
+        "shout": {
+          "ok": false,
+          "ms": 8256,
+          "inputValue": "ut",
+          "top": [
+            "🫔 tamale",
+            "⚱️ funeral urn",
+            "🌾 sheaf of rice",
+            "🔱 trident emblem",
+            "🇸🇩 flag sudan",
+            "🤘 sign of the horns",
+            "🚺 women s room",
+            "🌮 taco",
+            "👨‍🎓 man student",
+            "🇳🇺 flag niue"
+          ]
+        },
+        "attach": {
+          "ok": true,
+          "ms": 1627,
+          "inputValue": "attach",
+          "top": [
+            "🩹 adhesive bandage",
+            "🎗️ reminder ribbon",
+            "📌 pushpin",
+            "🎀 ribbon",
+            "🪑 chair",
+            "🪢 knot",
+            "🩼 crutch",
+            "🫵 index pointing at the viewer",
+            "👥 busts in silhouette",
+            "🧦 socks"
+          ]
+        }
+      },
+      "errors": [],
+      "isolation": {
+        "crossOriginIsolated": false,
+        "sharedArrayBuffer": false,
+        "webgpu": true
+      },
+      "totalMs": 10824,
+      "browserVersion": "155.0.8059.82"
+    },
+    {
+      "index": 1,
+      "queries": {
+        "shout": {
+          "ok": false,
+          "ms": 8757,
+          "inputValue": "out",
+          "top": [
+            "🐳 spouting whale",
+            "🕳️ hole",
+            "👅 tongue",
+            "🥈 2nd place medal",
+            "🦶 foot",
+            "🥡 takeout box",
+            "📤 outbox tray",
+            "😮 face with open mouth",
+            "🫳 palm down hand",
+            "🚪 door"
+          ]
+        },
+        "attach": {
+          "ok": true,
+          "ms": 1626,
+          "inputValue": "attach",
+          "top": [
+            "🩹 adhesive bandage",
+            "🎗️ reminder ribbon",
+            "📌 pushpin",
+            "🎀 ribbon",
+            "🪑 chair",
+            "🪢 knot",
+            "🩼 crutch",
+            "🫵 index pointing at the viewer",
+            "👥 busts in silhouette",
+            "🧦 socks"
+          ]
+        }
+      },
+      "errors": [],
+      "isolation": {
+        "crossOriginIsolated": false,
+        "sharedArrayBuffer": false,
+        "webgpu": true
+      },
+      "totalMs": 10759,
+      "browserVersion": "155.0.8059.82"
+    },
+    {
+      "index": 2,
+      "queries": {
+        "shout": {
+          "ok": false,
+          "ms": 5730,
+          "inputValue": "hout",
+          "top": [
+            "🥡 takeout box",
+            "🍩 doughnut",
+            "🕳️ hole",
+            "🐳 spouting whale",
+            "🩼 crutch",
+            "🥐 croissant",
+            "🧻 roll of paper",
+            "🙎‍♂️ man pouting",
+            "😡 pouting face",
+            "🙎‍♀️ woman pouting"
+          ]
+        },
+        "attach": {
+          "ok": true,
+          "ms": 1628,
+          "inputValue": "attach",
+          "top": [
+            "🩹 adhesive bandage",
+            "🎗️ reminder ribbon",
+            "📌 pushpin",
+            "🎀 ribbon",
+            "🪑 chair",
+            "🪢 knot",
+            "🩼 crutch",
+            "🫵 index pointing at the viewer",
+            "👥 busts in silhouette",
+            "🧦 socks"
+          ]
+        }
+      },
+      "errors": [],
+      "isolation": {
+        "crossOriginIsolated": false,
+        "sharedArrayBuffer": false,
+        "webgpu": true
+      },
+      "totalMs": 7660,
+      "browserVersion": "155.0.8059.82"
+    }
+  ]
+}
