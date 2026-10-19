@@ -4,7 +4,9 @@ import {
   render,
   screen,
 } from '@testing-library/react'
-import { createRef } from 'react'
+import { act, createRef } from 'react'
+import { hydrateRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
 import {
   afterEach,
   describe,
@@ -57,5 +59,32 @@ describe('EmojiSearchView', () => {
 
     expect(onQueryChange).toHaveBeenCalledWith('loud')
     expect(onSearchKeyDown).toHaveBeenCalledOnce()
+  })
+
+  it('keeps text typed into the server-rendered field before hydration', async () => {
+    const onQueryChange = vi.fn()
+    const view = (
+      <EmojiSearchView
+        query=""
+        results={[]}
+        selectedIndex={null}
+        onQueryChange={onQueryChange}
+        onClear={() => {}}
+        onChip={() => {}}
+        onPick={() => {}}
+        onMenu={() => {}}
+      />
+    )
+    const container = document.createElement('div')
+    container.innerHTML = renderToString(view)
+    document.body.append(container)
+    container.querySelector('input')!.value = 's'
+
+    await act(async () => {
+      hydrateRoot(container, view)
+    })
+
+    expect(onQueryChange).toHaveBeenCalledWith('s')
+    container.remove()
   })
 })
